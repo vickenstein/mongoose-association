@@ -1,0 +1,35 @@
+{
+  "name": "mongoose-association",
+  "version": "0.0.1",
+  "description": "A cleaner and faster way to setup mongoose populate with virtual field",
+  "main": "index.js",
+  "scripts": {
+    "test": "NODE_PATH=. mocha --recursive --exit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vickenstein/mongoose-association.git"
+  },
+  "keywords": [
+    "mongoose",
+    "association",
+    "relationship",
+    "populate",
+    "virtual"
+  ],
+  "author": "Victor Zeng",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vickenstein/mongoose-association/issues"
+  },
+  "homepage": "https://github.com/vickenstein/mongoose-association#readme",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0"
+  },
+  "dependencies": {
+    "inflection": "^1.12.0",
+    "lodash": "^4.17.10",
+    "mongoose": "^5.1.7"
+  }
+}
