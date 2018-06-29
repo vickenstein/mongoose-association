@@ -1,9 +1,6 @@
 require('test/specHelper')
 const { assert } = require('chai')
-const MongooseAssociation = require('index')
 const mongoose = require('mongoose')
-
-MongooseAssociation.assign(mongoose.Schema)
 
 const BikeSchema = new mongoose.Schema()
 BikeSchema.hasOne('License', {

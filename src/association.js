@@ -3,7 +3,7 @@ const inflection = require('inflection')
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Schema.Types.ObjectId
 
-module.exports = class Association {
+class Association {
   belongsTo(modelName, { localField, foreignKey } = {}, schemaOptions = {}) {
     if (!modelName) throw 'model name required for assigning association'
     if (!localField) localField = `${modelName.charAt(0).toLowerCase()}${modelName.substr(1)}`
@@ -149,3 +149,48 @@ module.exports = class Association {
     })
   }
 }
+
+module.exports = function(mongoose) {
+
+  Association.assign(mongoose.Schema)
+
+  patchQueryPrototype()
+  return plugin
+
+  function plugin(schema, options = {}) {
+    schema.methods.populateAssociation = function(paths) {
+      return populateAssociation(this.constructor, this, paths)
+    }
+
+    schema.statics.populateAssociation = function(docs, paths) {
+      return populateAssociation(this, docs, paths)
+    }
+
+    function populateAssociation(model, docs, paths, op) {
+
+    }
+    // const exec = mongoose.Query.prototype.exec
+
+    // schema.query.populateQuery = function(fields) {
+    //   return this
+    //
+
+  }
+
+  function patchQueryPrototype() {
+    const Query = mongoose.Query
+    const _exec = Query.prototype.exec
+
+    if (Query.prototype.populateAssociation) return
+
+    Query.prototype.populateAssociation = function(fields) {
+
+    }
+
+    Query.prototype.exec = function(op, callback) {
+      return _exec.call(this, op, callback)
+    }
+  }
+}
+
+

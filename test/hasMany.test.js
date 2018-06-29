@@ -1,9 +1,6 @@
 require('test/specHelper')
 const { assert } = require('chai')
-const MongooseAssociation = require('index')
 const mongoose = require('mongoose')
-
-MongooseAssociation.assign(mongoose.Schema)
 
 const BandSchema = new mongoose.Schema({})
 BandSchema.hasMany('Member')

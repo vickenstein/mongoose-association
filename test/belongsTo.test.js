@@ -1,9 +1,6 @@
 require('test/specHelper')
 const { assert } = require('chai')
-const MongooseAssociation = require('index')
 const mongoose = require('mongoose')
-
-MongooseAssociation.assign(mongoose.Schema)
 
 const BookSchema = new mongoose.Schema()
 BookSchema.belongsTo('Author')
@@ -77,6 +74,15 @@ describe("assign association class", () => {
       assert.strictEqual(bookAuthor._id, author._id)
       assert.isOk(bookEditor)
       assert.strictEqual(bookEditor._id, author._id)
+    })
+
+    it('find and populate association', async () => {
+      const author = await new Author().save()
+      const book = await new Book({
+        author: author,
+        editor: author
+      }).save()
+      const foundBook = await Book.findOne({ _id: book._id })
     })
   })
 })
