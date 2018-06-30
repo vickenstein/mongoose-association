@@ -1,40 +1,43 @@
 const _ = require('lodash')
-const inflection = require('inflection')
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Schema.Types.ObjectId
+const Reflections = require('./reflections')
 
-class Association {
+module.exports = class Association {
   belongsTo(modelName, { localField, foreignKey } = {}, schemaOptions = {}) {
-    if (!modelName) throw 'model name required for assigning association'
-    if (!localField) localField = `${modelName.charAt(0).toLowerCase()}${modelName.substr(1)}`
-    if (!foreignKey) foreignKey = `${localField}Id`
-
-    if (!this.reflections) this.reflections = { belongsTo: {} }
-    if (!this.reflections.belongsTo) this.reflections.belongsTo = {}
-    this.reflections.belongsTo[foreignKey] = {
+    if (!this.reflections) this.reflections = new Reflections
+    const reflection = this.reflections.add('belongsTo', {
       modelName,
-      localField
-    }
+      localField,
+      foreignKey
+    })
 
+    this.defineBelongsToSchema(reflection, schemaOptions)
+    this.defineBelongsToVirtual(reflection)
+  }
+
+  defineBelongsToSchema({ modelName, localField, foreignKey }, schemaOptions) {
     _.merge(schemaOptions, {
       type: ObjectId,
       ref: modelName,
       get: function() {
-        const reference = this._doc[foreignKey]
-        if (reference instanceof Object) return reference._id
-        return reference
+        const _id = this._doc[foreignKey]
+        if (_id.constructor.name !== 'ObjectID') return _id._id
+        return _id
       }
     })
 
     const schema = {}
     schema[foreignKey] = schemaOptions
     this.add(schema)
+  }
 
+  defineBelongsToVirtual({ modelName, localField, foreignKey }) {
     this.virtual(localField).get(async function() {
-      const reference = this._doc[foreignKey]
-      if (reference instanceof Object) return reference
-      await this.populate(foreignKey)
-      return reference
+      const _id = this._doc[foreignKey]
+      if (_id.constructor.name !== 'ObjectID') return _id
+      this[foreignKey] = await this.model(modelName).findOne({ _id })
+      return this._doc[foreignKey]
     }).set(function(value) {
       this[foreignKey] = value
     })
@@ -42,27 +45,27 @@ class Association {
 
   // todo: through association
   hasOne(foreignModelName, { localField, foreignKey} = {}) {
-    if (!foreignModelName) throw 'foreign model name required for assigning association'
-    if (!localField) localField = `${foreignModelName.charAt(0).toLowerCase()}${foreignModelName.substr(1)}`
-    if (!foreignKey) foreignKey = modelName => `${modelName.charAt(0).toLowerCase()}${modelName.substr(1)}Id`
-
-    if (!this.reflections) this.reflections = { hasOne: {} }
-    if (!this.reflections.hasOne) this.reflections.hasOne = {}
-    this.reflections.hasOne[localField] = {
+    if (!this.reflections) this.reflections = new Reflections
+    const reflection = this.reflections.add('hasOne', {
       foreignModelName,
+      localField,
       foreignKey
-    }
+    })
 
+    this.defineHasOneVirtual(reflection)
+  }
+
+  defineHasOneVirtual({foreignModelName, localField, foreignKey}) {
     this.virtual(localField).get(async function() {
       if (!this[`_${localField}`]) {
         const model = this.constructor
         const { modelName } = model
         const foreignModel = this.model(foreignModelName)
         const key = _.isFunction(foreignKey) ? foreignKey(modelName) : foreignKey
-        const isPolymorphic = _.get(foreignModel, `schema.reflections.polymorphic.${key}`)
+        const isPolymorphic = _.get(foreignModel, `schema.reflections.polymorphic.indexedByForeignKey.${key}`)
         const query = {}
         query[key] = this._id
-        if (isPolymorphic) query._type = modelName
+        if (isPolymorphic) query[`${key}Type`] = modelName
         this[`_${localField}`] = await foreignModel.findOne(query)
       }
       return this[`_${localField}`]
@@ -71,27 +74,27 @@ class Association {
 
   // todo: through association
   hasMany(foreignModelName, { localField, foreignKey } = {}) {
-    if (!foreignModelName) throw 'foreign model name required for assigning association'
-    if (!localField) localField = inflection.pluralize(`${foreignModelName.charAt(0).toLowerCase()}${foreignModelName.substr(1)}`)
-    if (!foreignKey) foreignKey = modelName => `${modelName.charAt(0).toLowerCase()}${modelName.substr(1)}Id`
-
-    if (!this.reflections) this.reflections = { hasMany: {} }
-    if (!this.reflections.hasMany) this.reflections.hasMany = {}
-    this.reflections.hasMany[localField] = {
+    if (!this.reflections) this.reflections = new Reflections
+    const reflection = this.reflections.add('hasMany', {
       foreignModelName,
+      localField,
       foreignKey
-    }
+    })
 
+    this.defineHasManyVirtual(reflection)
+  }
+
+  defineHasManyVirtual({ foreignModelName, localField, foreignKey }) {
     this.virtual(localField).get(async function() {
       if (!this[`_${localField}`]) {
         const model = this.constructor
         const { modelName } = model
         const foreignModel = this.model(foreignModelName)
         const key = _.isFunction(foreignKey) ? foreignKey(modelName) : foreignKey
-        const isPolymorphic = _.get(foreignModel, `schema.reflections.polymorphic.${key}`)
+        const isPolymorphic = _.get(foreignModel, `schema.reflections.polymorphic.indexedByForeignKey.${key}`)
         const query = {}
         query[key] = this._id
-        if (isPolymorphic) query._type = modelName
+        if (isPolymorphic) query[`${key}Type`] = modelName
         this[`_${localField}`] = await foreignModel.find(query)
       }
       return this[`_${localField}`]
@@ -99,41 +102,42 @@ class Association {
   }
 
   polymorphic(foreignModelNames = [], { localField, foreignKey } = {}, schemaOptions = {}) {
-    if (!foreignModelNames.length) throw 'foreign model names required for assigning association'
-    if (!localField) throw 'localField is required for polymorphic association'
-    if (!foreignKey) foreignKey = `${localField}Id`
-
-    if (!this.reflections) this.reflections = { polymorphic: {} }
-    if (!this.reflections.polymorphic) this.reflections.polymorphic = {}
-    this.reflections.polymorphic[foreignKey] = {
+    if (!this.reflections) this.reflections = new Reflections
+    const reflection = this.reflections.add('polymorphic', {
       foreignModelNames,
-      localField
-    }
+      localField,
+      foreignKey
+    })
 
+    this.definePolymorphicSchema(reflection, schemaOptions)
+    this.definePolymorphicVirtual(reflection)
+  }
+
+  definePolymorphicSchema({ foreignModelNames, localField, foreignKey }, schemaOptions) {
     _.merge(schemaOptions, {
       type: ObjectId
     })
 
     const schema = {}
     schema[foreignKey] = schemaOptions
-    schema._type = {
+    schema[`${foreignKey}Type`] = {
       type: String,
       enum: foreignModelNames
     }
     this.add(schema)
+  }
 
+  definePolymorphicVirtual({ foreignModelNames, localField, foreignKey }) {
     this.virtual(localField).get(async function() {
-      if (this[`_${localField}`]) {
+      if (!this[`_${localField}`]) {
         const _id = this[foreignKey]
-        const _type = this._type
+        const foreignModelName = this[`${foreignKey}Type`]
         if (!_id) return null
-        this[`_${localField}`] = await this.model(_type).findOne({
-          _id
-        })
+        this[`_${localField}`] = await this.model(foreignModelName).findOne( { _id } )
       }
       return this[`_${localField}`]
     }).set(function(value) {
-      this._type = value.constructor.modelName
+      this[`${foreignKey}Type`] = value.constructor.modelName
       this[foreignKey] = value._id
       this[`_${localField}`] = value
     })
@@ -147,49 +151,6 @@ class Association {
         Object.defineProperty(originalClass.prototype, methodName, method)
       }
     })
-  }
-}
-
-module.exports = function(mongoose) {
-
-  Association.assign(mongoose.Schema)
-
-  patchQueryPrototype()
-  return plugin
-
-  function plugin(schema, options = {}) {
-    schema.methods.populateAssociation = function(paths) {
-      return populateAssociation(this.constructor, this, paths)
-    }
-
-    schema.statics.populateAssociation = function(docs, paths) {
-      return populateAssociation(this, docs, paths)
-    }
-
-    function populateAssociation(model, docs, paths, op) {
-
-    }
-    // const exec = mongoose.Query.prototype.exec
-
-    // schema.query.populateQuery = function(fields) {
-    //   return this
-    //
-
-  }
-
-  function patchQueryPrototype() {
-    const Query = mongoose.Query
-    const _exec = Query.prototype.exec
-
-    if (Query.prototype.populateAssociation) return
-
-    Query.prototype.populateAssociation = function(fields) {
-
-    }
-
-    Query.prototype.exec = function(op, callback) {
-      return _exec.call(this, op, callback)
-    }
   }
 }
 

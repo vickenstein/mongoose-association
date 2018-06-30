@@ -24,7 +24,7 @@ const User = mongoose.model('User', UserSchema)
 describe("assign association class", () => {
 
   describe("#hasOne", () => {
-    it('', async () => {
+    it('create and fetch has one association model', async () => {
       const user = await new User().save()
       const profile = await new Profile({
         user: user
@@ -36,6 +36,33 @@ describe("assign association class", () => {
       assert.strictEqual(userProfile._id.toString(), profile._id.toString())
       const userControls = await user.controls
       assert.strictEqual(userControls._id.toString(), setting._id.toString())
+    })
+
+    it('', async () => {
+      const user1 = await new User().save()
+      const user2 = await new User().save()
+      const profile1 = await new Profile({
+        user: user1
+      }).save()
+      const setting1 = await new Setting({
+        controller: user1
+      }).save()
+      const profile2 = await new Profile({
+        user: user2
+      }).save()
+      const setting2 = await new Setting({
+        controller: user2
+      }).save()
+      const users = await User.find().populateAssociation('profile', 'controls')
+      let mongooseRequestCount = mongoose.requestCount
+      let profile = await users[0].profile
+      let controls = await users[0].controls
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+      const user = User.findOne().populateAssociation('profile', 'controls')
+      mongooseRequestCount = mongoose.requestCount
+      profile = await user.profile
+      controls = await user.controls
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
   })
 })

@@ -39,5 +39,35 @@ describe("assign association class", () => {
       assert.strictEqual(members.length, count)
       assert.strictEqual(toys.length, count)
     })
+
+    it('', async () => {
+      const count = 5
+      const band1 = await new Band().save()
+      const band2 = await new Band().save()
+      for (let i = 0; i < count; i++) {
+        let member = await new Member({
+          band: band1
+        }).save()
+        let instrument = await new Instrument({
+          band: band1
+        }).save()
+        member = await new Member({
+          band: band2
+        }).save()
+        instrument = await new Instrument({
+          band: band2
+        }).save()
+      }
+      const bands = await Band.find().populateAssociation('members', 'toys')
+      let mongooseRequestCount = mongoose.requestCount
+      let members = await bands[0].members
+      let toys = await bands[0].toys
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+      const band = await Band.findOne().populateAssociation('members', 'toys')
+      mongooseRequestCount = mongoose.requestCount
+      members = await bands[0].members
+      toys = await bands[0].toys
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
   })
 })
