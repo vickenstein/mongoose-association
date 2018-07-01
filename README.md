@@ -68,7 +68,7 @@ const RiderSchema = new Schema()
 RiderSchema.belongsTo('Bike')
 RiderSchema.belongsTo('Helmet')
 ```
-Right here we have defined a schema for Rider. Using the `belongsTo` method with the model Bike can automatically have the `localField` defined as **bike**, this results in a standard mongoose virtual property **bike** on each instance. **all `mongoose-association` defined virtuals returns a promise** and is design to function with `await`. A `foreignKey` was also automatically defined as **bikeId**. This will be the auto property storing the reference on the databased mongoose document.
+Right here we have defined a schema for Rider. Using the `belongsTo` method with the model Bike can automatically have the `localField` defined as **bike**, this results in a standard mongoose virtual property **bike** on each instance. **all `mongoose-association` defined virtuals returns a promise** and is designed to function with `await`. A `foreignKey` was also automatically defined as **bikeId**. This will be the auto generated property storing the reference on the databased mongoose document.
 ```javascript
 const BikeSchema = new Schema()
 BikeSchema.hasOne('Rider')
@@ -93,7 +93,7 @@ RegistrationSchema.belongsTo('Car')
 RegistrationSchema.belongsTo('Alien', {
   localField: 'owner'
 })
-```javascript
+```
 Lets visit another scenario that is a bit foreign, where we run an **Alien** **Car** **Registration**. There are two different ways an **Alien** can interact with a **Registration**. One is by assigning the `localField` to be **owner**, which renders the `foreignKey` to be **ownerId**. this allows the **Alien** to be the "owner" of the **Car**.
 ```
 RegistrationSchema.belongsTo('Alien', {
