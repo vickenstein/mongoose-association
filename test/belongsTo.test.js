@@ -15,12 +15,12 @@ const AuthorSchema = new mongoose.Schema()
 const Author = mongoose.model('Author', AuthorSchema)
 
 describe("assign association class", () => {
-  describe("#reflections", () => {
+  describe("#associations", () => {
     it('create an association record on the model', () => {
-      assert.isOk(_.get(Book, 'schema.reflections.belongsTo.indexedByForeignKey.authorId'), 'auto generate correct foreignKey')
-      assert.strictEqual(_.get(Book, 'schema.reflections.belongsTo.indexedByForeignKey.authorId').localField, 'author', 'auto generate correct virtual localField')
-      assert.isOk(_.get(Book, 'schema.reflections.belongsTo.indexedByForeignKey.editor_id'), 'manually defined correct foreignKey')
-      assert.strictEqual(_.get(Book, 'schema.reflections.belongsTo.indexedByForeignKey.editor_id').localField, 'editor', 'manually defined correct virtual localField')
+      assert.isOk(_.get(Book, 'schema.associations.belongsTo.indexedByForeignKey.authorId'), 'auto generate correct foreignKey')
+      assert.strictEqual(_.get(Book, 'schema.associations.belongsTo.indexedByForeignKey.authorId').localField, 'author', 'auto generate correct virtual localField')
+      assert.isOk(_.get(Book, 'schema.associations.belongsTo.indexedByForeignKey.editor_id'), 'manually defined correct foreignKey')
+      assert.strictEqual(_.get(Book, 'schema.associations.belongsTo.indexedByForeignKey.editor_id').localField, 'editor', 'manually defined correct virtual localField')
     })
   })
   describe("#belongsTo", () => {
@@ -44,7 +44,7 @@ describe("assign association class", () => {
       assert.strictEqual(book.editor_id, author._id)
     })
 
-    it('create a mongoose object with objectId as association on reflection field', async () => {
+    it('create a mongoose object with objectId as association on association field', async () => {
       const author = await new Author().save()
       const book = await new Book({
         author: author._id,
@@ -60,7 +60,7 @@ describe("assign association class", () => {
       assert.strictEqual(bookEditor._id.toString(), author._id.toString())
     })
 
-    it('create a mongoose object with object as association on reflection field', async () => {
+    it('create a mongoose object with object as association on association field', async () => {
       const author = await new Author().save()
       const book = await new Book({
         author: author,

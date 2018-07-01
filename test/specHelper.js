@@ -5,12 +5,12 @@ mongoose.set('debug', function (collection, method, query, doc, options) {
   mongoose.requestCount++
 })
 
-const MongooseAssociation = require('index')(mongoose)
-mongoose.plugin(MongooseAssociation)
+require('index')(mongoose)
 
 const connect = require('test/helpers/connect')
 const drop = require('test/helpers/drop')
 const disconnect = require('test/helpers/disconnect')
+const setupSchema = require('test/helpers/setupSchema')
 
 before(() => {
   return new Promise((resolve) => {
@@ -18,11 +18,13 @@ before(() => {
   })
 })
 
-beforeEach(() => {
+before(() => {
   return new Promise((resolve) => {
     drop(resolve)
   })
 })
+
+before(setupSchema)
 
 after(() => {
   return new Promise((resolve) => {

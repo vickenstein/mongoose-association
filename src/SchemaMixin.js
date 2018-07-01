@@ -1,19 +1,19 @@
 const _ = require('lodash')
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Schema.Types.ObjectId
-const Reflections = require('./reflections')
+const Associations = require('./associations')
 
-module.exports = class Association {
+module.exports = class SchemaMixin {
   belongsTo(modelName, { localField, foreignKey } = {}, schemaOptions = {}) {
-    if (!this.reflections) this.reflections = new Reflections
-    const reflection = this.reflections.add('belongsTo', {
+    if (!this.associations) this.associations = new Associations
+    const association = this.associations.add('belongsTo', {
       modelName,
       localField,
       foreignKey
     })
 
-    this.defineBelongsToSchema(reflection, schemaOptions)
-    this.defineBelongsToVirtual(reflection)
+    this.defineBelongsToSchema(association, schemaOptions)
+    this.defineBelongsToVirtual(association)
   }
 
   defineBelongsToSchema({ modelName, localField, foreignKey }, schemaOptions) {
@@ -45,14 +45,14 @@ module.exports = class Association {
 
   // todo: through association
   hasOne(foreignModelName, { localField, foreignKey} = {}) {
-    if (!this.reflections) this.reflections = new Reflections
-    const reflection = this.reflections.add('hasOne', {
+    if (!this.associations) this.associations = new Associations
+    const association = this.associations.add('hasOne', {
       foreignModelName,
       localField,
       foreignKey
     })
 
-    this.defineHasOneVirtual(reflection)
+    this.defineHasOneVirtual(association)
   }
 
   defineHasOneVirtual({foreignModelName, localField, foreignKey}) {
@@ -62,7 +62,7 @@ module.exports = class Association {
         const { modelName } = model
         const foreignModel = this.model(foreignModelName)
         const key = _.isFunction(foreignKey) ? foreignKey(modelName) : foreignKey
-        const isPolymorphic = _.get(foreignModel, `schema.reflections.polymorphic.indexedByForeignKey.${key}`)
+        const isPolymorphic = _.get(foreignModel, `schema.associations.polymorphic.indexedByForeignKey.${key}`)
         const query = {}
         query[key] = this._id
         if (isPolymorphic) query[`${key}Type`] = modelName
@@ -74,14 +74,14 @@ module.exports = class Association {
 
   // todo: through association
   hasMany(foreignModelName, { localField, foreignKey } = {}) {
-    if (!this.reflections) this.reflections = new Reflections
-    const reflection = this.reflections.add('hasMany', {
+    if (!this.associations) this.associations = new Associations
+    const association = this.associations.add('hasMany', {
       foreignModelName,
       localField,
       foreignKey
     })
 
-    this.defineHasManyVirtual(reflection)
+    this.defineHasManyVirtual(association)
   }
 
   defineHasManyVirtual({ foreignModelName, localField, foreignKey }) {
@@ -91,7 +91,7 @@ module.exports = class Association {
         const { modelName } = model
         const foreignModel = this.model(foreignModelName)
         const key = _.isFunction(foreignKey) ? foreignKey(modelName) : foreignKey
-        const isPolymorphic = _.get(foreignModel, `schema.reflections.polymorphic.indexedByForeignKey.${key}`)
+        const isPolymorphic = _.get(foreignModel, `schema.associations.polymorphic.indexedByForeignKey.${key}`)
         const query = {}
         query[key] = this._id
         if (isPolymorphic) query[`${key}Type`] = modelName
@@ -102,15 +102,15 @@ module.exports = class Association {
   }
 
   polymorphic(foreignModelNames = [], { localField, foreignKey } = {}, schemaOptions = {}) {
-    if (!this.reflections) this.reflections = new Reflections
-    const reflection = this.reflections.add('polymorphic', {
+    if (!this.associations) this.associations = new Associations
+    const association = this.associations.add('polymorphic', {
       foreignModelNames,
       localField,
       foreignKey
     })
 
-    this.definePolymorphicSchema(reflection, schemaOptions)
-    this.definePolymorphicVirtual(reflection)
+    this.definePolymorphicSchema(association, schemaOptions)
+    this.definePolymorphicVirtual(association)
   }
 
   definePolymorphicSchema({ foreignModelNames, localField, foreignKey }, schemaOptions) {
@@ -143,7 +143,7 @@ module.exports = class Association {
     })
   }
 
-  static assign(originalClass) {
+  static apply(originalClass) {
     const mixinStaticMethods = Object.getOwnPropertyDescriptors(this.prototype)
     Object.keys(mixinStaticMethods).forEach(methodName => {
       if (methodName !== 'constructor') {

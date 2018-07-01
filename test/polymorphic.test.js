@@ -48,7 +48,6 @@ describe("assign association class", () => {
 
       const licenses = await License.find()
       let vehicle = await licenses[0].vehicle
-      console.log(vehicle, "final")
       assert.isOk(vehicle)
       const license = await License.findOne()
       vehicle = await license.vehicle

@@ -1,8 +1,8 @@
 const _ = require('lodash')
 
-module.exports = class FieldTraverse {
+module.exports = class Fields {
   constructor(...fields) {
-    this.fields = FieldTraverse.reduce(...fields)
+    this.fields = Fields.reduce(...fields)
   }
 
   static reduce(...fields) {
@@ -30,13 +30,13 @@ module.exports = class FieldTraverse {
   }
 
   children(matchField) {
-    const fieldTraverse = new FieldTraverse
+    const fields = new Fields
     this.fields.forEach(field => {
       const splitField = field.split('.')
       if (splitField.length > 1 && splitField[0] === matchField) {
-        fieldTraverse.fields.push(splitField.slice(1).join('.'))
+        fields.fields.push(splitField.slice(1).join('.'))
       }
     })
-    return fieldTraverse
+    return fields
   }
 }

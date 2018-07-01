@@ -1,49 +1,4 @@
-# mongoose-association
-A cleaner and faster way to setup mongoose populate with virtual field using normalized associations. This library is build for async await node environment minimum 7.6
 
-##Setup
-npm install mongoose-association
-
-```javascript
-  const mongoose = require('mongoose')
-  require('mongoose-association')(mongoose)
-```
-
-##Naming Convention
-As mongoose model classes are typically singular thus mongoose-association stick to naming models using singular words.
-As typically javascript utilize camel casing thus all auto generated naming is done using camel case
-
-##Glossary
-
-####`foreignKey`
-the **schema** property for the relational **reference** typically an mongoose **ObjectID**
-
-####`localField`
-the **model** instance property that holds relational record
-
-###Associations
-`mongoose-association` has 4 types of association to relation mongoose schemas.
-* `belongsTo`
-* `polymorphic`
-* `hasOne` `through`
-* `hasMany` `through`
-
-####`belongsTo`
-this relation specify the reference lies directly on the schema and related to a **single** model
-
-####`polymorphic`
-this relation specify the reference lies directly on the schema and related to **multiple** models
-
-####`hasOne`
-this relation specify the reference lies on another schema and it is **unique**
-
-####`hasMany`
-this relation specify the reference lies on another schema and it is **non-unique**
-
-####`through`
-
-##Schema Building
-```javascript
 const { Schema, model } = require('mongoose')
 
 const RiderSchema = new Schema()
@@ -142,4 +97,5 @@ AlienSchema.hasOne(['Bike', 'Car'], {
   localField: 'bestRated',
   scope: () => {}
 })
-```
+
+module.exports = () => {}
