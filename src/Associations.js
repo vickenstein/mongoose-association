@@ -12,86 +12,86 @@ class AssociationsBase {
   index(association) {
     this.associations.push(association)
     this.indexedByLocalField[association.localField] = association
-    this.indexedByForeignKey[association.foreignKey] = association
+    this.indexedByForeignKey[association.foreignField] = association
   }
 }
 
 class BelongsToAssociations extends AssociationsBase {
-  add({ modelName, localField, foreignKey }) {
+  add({ modelName, localField, foreignField }) {
     if (!modelName) throw 'modelName required for belongsTo Association'
-    const association = new BelongsToAssociation(modelName, localField, foreignKey)
+    const association = new BelongsToAssociation(modelName, localField, foreignField)
     this.index(association)
     return association
   }
 }
 
 class BelongsToAssociation {
-  constructor(modelName, localField, foreignKey) {
+  constructor(modelName, localField, foreignField) {
     this.modelName = modelName
     this.localField = localField || decapitalize(modelName)
-    this.foreignKey = foreignKey || idlize(this.localField)
+    this.foreignField = foreignField || idlize(this.localField)
   }
 }
 
 class HasOneAssociations extends AssociationsBase {
-  add({ foreignModelName, localField, foreignKey }) {
+  add({ foreignModelName, localField, foreignField, as, through }) {
     if (!foreignModelName) throw 'foreignModelName required for hasOne Association'
-    const association = new HasOneAssociation(foreignModelName, localField, foreignKey)
+    const association = new HasOneAssociation(foreignModelName, localField, foreignField, as, through)
     this.index(association)
     return association
   }
 }
 
 class HasOneAssociation {
-  constructor(foreignModelName, localField, foreignKey) {
+  constructor(foreignModelName, localField, foreignField, as, through) {
     this.foreignModelName = foreignModelName
     if (foreignModelName instanceof Array) {
-      this.localField = 'todo'
-      this.foreignKey = 'todo'
-    } else {
-      this.localField = localField || decapitalize(foreignModelName)
-      this.foreignKey = foreignKey ? foreignKey : modelName => idlize(decapitalize(modelName))
+      if (!localField) throw 'polymorphic hasOne require localField'
     }
+    this.as = as
+    this.through = through
+    this.localField = localField || decapitalize(foreignModelName)
+    this.foreignField = foreignField ? foreignField : modelName => idlize(as || decapitalize(modelName))
   }
 }
 
 class HasManyAssociations extends AssociationsBase {
-  add({ foreignModelName, localField, foreignKey }) {
+  add({ foreignModelName, localField, foreignField }) {
     if (!foreignModelName) throw 'foreignModelName required for hasMany Association'
-    const association = new HasManyAssociation(foreignModelName, localField, foreignKey)
+    const association = new HasManyAssociation(foreignModelName, localField, foreignField)
     this.index(association)
     return association
   }
 }
 
 class HasManyAssociation {
-  constructor(foreignModelName, localField, foreignKey) {
+  constructor(foreignModelName, localField, foreignField) {
     this.foreignModelName = foreignModelName
     if (foreignModelName instanceof Array) {
       this.localField = 'todo'
-      this.foreignKey = 'todo'
+      this.foreignField = 'todo'
     } else {
       this.localField = localField || inflection.pluralize(decapitalize(foreignModelName))
-      this.foreignKey = foreignKey ? foreignKey : modelName => idlize(decapitalize(modelName))
+      this.foreignField = foreignField ? foreignField : modelName => idlize(decapitalize(modelName))
     }
   }
 }
 
 class PolymorphicAssociations extends AssociationsBase {
-  add({ foreignModelNames, localField, foreignKey }) {
+  add({ foreignModelNames, localField, foreignField }) {
     if (!foreignModelNames && !foreignModelNames.length) throw 'foreignModelNames is required for polymorphic association'
     if (!localField) throw 'localField is required for polymorphic association'
-    const association = new PolymorphicAssociation(foreignModelNames, localField, foreignKey)
+    const association = new PolymorphicAssociation(foreignModelNames, localField, foreignField)
     this.index(association)
     return association
   }
 }
 
 class PolymorphicAssociation {
-  constructor(foreignModelNames, localField, foreignKey) {
+  constructor(foreignModelNames, localField, foreignField) {
     this.foreignModelNames = foreignModelNames
     this.localField = localField
-    this.foreignKey = foreignKey || idlize(localField)
+    this.foreignField = foreignField || idlize(localField)
   }
 }
 

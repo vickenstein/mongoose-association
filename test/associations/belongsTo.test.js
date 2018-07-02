@@ -18,9 +18,9 @@ describe("assign association class", () => {
   })
   describe("#associations", () => {
     it('create an association record on the model', () => {
-      assert.isOk(_.get(Rider, 'schema.associations.belongsTo.indexedByForeignKey.bikeId'), 'auto generate correct foreignKey')
+      assert.isOk(_.get(Rider, 'schema.associations.belongsTo.indexedByForeignKey.bikeId'), 'auto generate correct foreignField')
       assert.strictEqual(_.get(Rider, 'schema.associations.belongsTo.indexedByForeignKey.bikeId').localField, 'bike', 'auto generate correct virtual localField')
-      assert.isOk(_.get(Registration, 'schema.associations.belongsTo.indexedByForeignKey.approver_id'), 'manually defined correct foreignKey')
+      assert.isOk(_.get(Registration, 'schema.associations.belongsTo.indexedByForeignKey.approver_id'), 'manually defined correct foreignField')
       assert.strictEqual(_.get(Registration, 'schema.associations.belongsTo.indexedByForeignKey.approver_id').localField, 'approver', 'manually defined correct virtual localField')
     })
   })
@@ -34,7 +34,7 @@ describe("assign association class", () => {
       assert.strictEqual(rider.bikeId, bike._id)
     })
 
-    it('create a mongoose object with objectId as association with custom defined foreignKey', async () => {
+    it('create a mongoose object with objectId as association with custom defined foreignField', async () => {
       const alien = await new Alien().save()
       const registration = await new Registration({
         approver_id: alien._id
@@ -50,7 +50,7 @@ describe("assign association class", () => {
       assert.strictEqual(rider.bikeId, bike._id)
     })
 
-    it('create a mongoose object with object as association with custom defined foreignKey', async () => {
+    it('create a mongoose object with object as association with custom defined foreignField', async () => {
       const alien = await new Alien().save()
       const registration = await new Registration({
         approver_id: alien
@@ -66,7 +66,7 @@ describe("assign association class", () => {
       assert.strictEqual(rider.bikeId, bike._id)
     })
 
-    it('create a mongoose object with object on localField as association with custom defined foreignKey', async () => {
+    it('create a mongoose object with object on localField as association with custom defined foreignField', async () => {
       const alien = await new Alien().save()
       const registration = await new Registration({
         approver: alien

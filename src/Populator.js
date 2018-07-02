@@ -46,16 +46,16 @@ module.exports = class Populator {
   }
 
 
-  static async belongsTo({ modelName, localField, foreignKey }, documents, fields) {
+  static async belongsTo({ modelName, localField, foreignField }, documents, fields) {
     if (_.isArray(documents)) {
-      const _id = documents.map(document => document[foreignKey])
+      const _id = documents.map(document => document[foreignField])
       const records = await mongoose.model(modelName).find({ _id }).populateAssociation(...fields.fields)
       const recordsMap = _.keyBy(records, '_id')
       documents.forEach(document => {
-        document[foreignKey] = recordsMap[document[foreignKey]]
+        document[foreignField] = recordsMap[document[foreignField]]
       })
     } else {
-      documents[foreignKey] = await mongoose.model(modelName).findOne({ _id: documents[foreignKey] }).populateAssociation(...fields.fields)
+      documents[foreignField] = await mongoose.model(modelName).findOne({ _id: documents[foreignField] }).populateAssociation(...fields.fields)
     }
   }
 
@@ -67,23 +67,23 @@ module.exports = class Populator {
 
   }
 
-  static async polymorphic({ localField, foreignKey }, documents, fields) {
+  static async polymorphic({ localField, foreignField }, documents, fields) {
     if (_.isArray(documents)) {
-      const types = _.uniq(documents.map(document => document[`${foreignKey}Type`]))
+      const types = _.uniq(documents.map(document => document[`${foreignField}Type`]))
       const recordsMap = {}
       for (let i = 0; i < types.length; i++) {
         const modelName = types[i]
         const filter = {}
-        filter[`${foreignKey}Type`] = modelName
-        const _id = _.filter(documents, filter).map(document => document[foreignKey])
+        filter[`${foreignField}Type`] = modelName
+        const _id = _.filter(documents, filter).map(document => document[foreignField])
         const records = await mongoose.model(modelName).find({ _id }).populateAssociation(...fields.fields)
         recordsMap[modelName] = _.keyBy(records, '_id')
       }
       documents.forEach(document => {
-        document[localField] = recordsMap[document[`${foreignKey}Type`]][document[foreignKey]]
+        document[localField] = recordsMap[document[`${foreignField}Type`]][document[foreignField]]
       })
     } else {
-      documents[localField] = await mongoose.model(documents[`${foreignKey}Type`]).findOne({ _id: documents[foreignKey] })
+      documents[localField] = await mongoose.model(documents[`${foreignField}Type`]).findOne({ _id: documents[foreignField] })
     }
   }
 }

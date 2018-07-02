@@ -25,7 +25,7 @@ registrationSchema.belongsTo('Alien', {
 
 registrationSchema.belongsTo('Alien', {
   localField: 'approver',
-  foreignKey: 'approver_id'
+  foreignField: 'approver_id'
 })
 
 const alienSchema = new Schema()
@@ -35,7 +35,7 @@ alienSchema.hasMany('Registration', {
 
 alienSchema.hasMany('Registration', {
   localField: 'approvedRegistrations',
-  foreignKey: 'approver_id'
+  foreignField: 'approver_id'
 })
 
 alienSchema.hasMany('Car', {
@@ -82,8 +82,12 @@ bikeSchema.hasMany('Part', {
   localField: 'components'
 })
 
-carSchema.belongsTo('Rating')
-bikeSchema.belongsTo('Rating')
+carSchema.hasOne('Rating', {
+  as: 'vehicle'
+})
+bikeSchema.hasOne('Rating', {
+  as: 'vehicle'
+})
 
 const ratingSchema = new Schema()
 ratingSchema.polymorphic(['Bike', 'Car'], {
@@ -91,10 +95,31 @@ ratingSchema.polymorphic(['Bike', 'Car'], {
 })
 ratingSchema.belongsTo('Alien')
 
+alienSchema.hasOne('Rating')
 alienSchema.hasOne(['Bike', 'Car'], {
   through: 'Rating',
   throughWith: 'vehicle',
   localField: 'ratedVehicle'
+})
+
+carSchema.belongsTo('Settings')
+bikeSchema.belongsTo('Settings')
+
+const settingsSchema = new Schema()
+settingsSchema.hasOne(['Bike', 'Car'], {
+  localField: 'vehicle'
+})
+
+carSchema.polymorphic(['Settings', 'Options'], {
+  localField: 'solutions'
+})
+bikeSchema.polymorphic(['Settings', 'Options'], {
+  localField: 'solutions'
+})
+
+settingsSchema.hasOne(['Bike', 'Car'], {
+  localField: 'solutionVehicle',
+  as: 'solutions'
 })
 
 const Rider = mongoose.model('Rider', riderSchema)
@@ -106,5 +131,6 @@ const Car = mongoose.model('Car', carSchema)
 const Assembly = mongoose.model('Assembly', assemblySchema)
 const Part = mongoose.model('Part', partSchema)
 const Rating = mongoose.model('Rating', ratingSchema)
+const Settings = mongoose.model('Settings', settingsSchema)
 
 module.exports = () => {}

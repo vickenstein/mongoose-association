@@ -18,7 +18,7 @@ As typically javascript utilize camel casing thus all auto generated naming is d
 #### `modelName`
 the modelName property for a mongoose model holding the related schema.
 
-#### `foreignKey`
+#### `foreignField`
 the **schema** property for the relational **reference** typically an mongoose **ObjectID**
 
 #### `localField`
@@ -32,15 +32,15 @@ the **model** instance property that holds relational record
 * `hasMany` `through`
 
 #### `belongsTo`
-this relation specify the reference lies directly on the schema and related to a **single** model using a `foreignKey`
+this relation specify the reference lies directly on the schema and related to a **single** model using a `foreignField`
 ```javascript
-belongsTo(modelName, { localField, foreignKey } = {}, schemaOptions = {}) {
+belongsTo(modelName, { localField, foreignField } = {}, schemaOptions = {}) {
 
 }
 ```
 ###### modelName *required*
 ###### localField *optional*
-###### foreignKey *optional*
+###### foreignField *optional*
 ###### schemaOptions *optional* - for additional mongoose schema feature e.g. { required: true }
 
 #### `polymorphic`
@@ -69,7 +69,7 @@ const riderSchema = new Schema()
 riderSchema.belongsTo('Bike')
 riderSchema.belongsTo('Helmet')
 ```
-Right here we have defined a schema for Rider. Using the `belongsTo` method with the model Bike can automatically have the `localField` defined as **bike**, this results in a standard mongoose virtual property **bike** on each instance. **all `mongoose-association` defined virtuals returns a promise** and is designed to function with `await`. A `foreignKey` was also automatically defined as **bikeId**. This will be the auto generated property storing the reference on the databased mongoose document.
+Right here we have defined a schema for Rider. Using the `belongsTo` method with the model Bike can automatically have the `localField` defined as **bike**, this results in a standard mongoose virtual property **bike** on each instance. **all `mongoose-association` defined virtuals returns a promise** and is designed to function with `await`. A `foreignField` was also automatically defined as **bikeId**. This will be the auto generated property storing the reference on the databased mongoose document.
 ```javascript
 const bikeSchema = new Schema()
 bikeSchema.hasOne('Rider')
@@ -95,14 +95,14 @@ registrationSchema.belongsTo('Alien', {
   localField: 'owner'
 })
 ```
-Lets visit another scenario that is a bit foreign, where we run an **Alien** **Car** **Registration**. There are two different ways an **Alien** can interact with a **Registration**. One is by assigning the `localField` to be **owner**, which renders the `foreignKey` to be **ownerId**. this allows the **Alien** to be the "owner" of the **Car**.
+Lets visit another scenario that is a bit foreign, where we run an **Alien** **Car** **Registration**. There are two different ways an **Alien** can interact with a **Registration**. One is by assigning the `localField` to be **owner**, which renders the `foreignField` to be **ownerId**. this allows the **Alien** to be the "owner" of the **Car**.
 ```
 registrationSchema.belongsTo('Alien', {
   localField: 'approver',
-  foreignKey: 'approver_id'
+  foreignField: 'approver_id'
 })
 ```
-Similarly an **Alien** can also be an **approver** of the registration, and the `foreignKey` can be modified to use snake case **approver_id** or any format prefered.
+Similarly an **Alien** can also be an **approver** of the registration, and the `foreignField` can be modified to use snake case **approver_id** or any format prefered.
 ```javascript
 const alienSchema = new Schema()
 alienSchema.hasMany('Registration', {
@@ -113,17 +113,17 @@ With this robust system we can declare that each **Alien** may have many **Regis
 ```javascript
 alienSchema.hasMany('Registration', {
   localField: 'approvedRegistrations',
-  foreignKey: 'approver_id'
+  foreignField: 'approver_id'
 })
 ```
-**Alien** can also be the **approver** of **Registration**. This is where we can define that each **Alien** to `hasMany` **approvedRegistrations** using `localField`. The `foreignKey` is specified as **approver_id** to distinguish which interaction. Apply `as` would not work in this case because *approver* will resolve into the incorrect `foriegnKey` *approverId*
+**Alien** can also be the **approver** of **Registration**. This is where we can define that each **Alien** to `hasMany` **approvedRegistrations** using `localField`. The `foreignField` is specified as **approver_id** to distinguish which interaction. Apply `as` would not work in this case because *approver* will resolve into the incorrect `foriegnField` *approverId*
 ```javascript
 alienSchema.hasMany('Car', {
   through: 'Registration',
   throughAs: 'owner'
 })
 ```
-`hasMany` `through` is normally used for many to many relationships. `throughAs` function similarly to `as` in term of its ability to defined the `localField` and `foreignKey` used in the mongo `$lookup`. In this case the **owner** will be used to reference **ownerId**. This relationship will result in the `localField` of **cars**, and using the `foreignKey` of **carId**
+`hasMany` `through` is normally used for many to many relationships. `throughAs` function similarly to `as` in term of its ability to defined the `localField` and `foreignField` used in the mongo `$lookup`. In this case the **owner** will be used to reference **ownerId**. This relationship will result in the `localField` of **cars**, and using the `foreignField` of **carId**
 ```javascript
 alienSchema.hasMany('Car', {
   through: 'Registration',
@@ -148,7 +148,7 @@ assemblySchema.polymorphic(['Bike', 'Car'], {
 })
 assemblySchema.belongsTo('Part')
 ```
-`polymorphic` is last type of relation, and it is most similar of to `belongsTo`, with the exception that more than one model can be associated. A `localField` is required for polymorphic association because `mongoose-association` doesn't pick favors auto generation. Though the `foreignKey` is inferred from the `localField` as **vehicleId**. polymorphic also generates an additional schema property storing the document type `modelName` this property is auto generated using the `foreignKey` as **vehicleIdType**
+`polymorphic` is last type of relation, and it is most similar of to `belongsTo`, with the exception that more than one model can be associated. A `localField` is required for polymorphic association because `mongoose-association` doesn't pick favors auto generation. Though the `foreignField` is inferred from the `localField` as **vehicleId**. polymorphic also generates an additional schema property storing the document type `modelName` this property is auto generated using the `foreignField` as **vehicleIdType**
 ```javascript
 const partSchema = new Schema()
 partSchema.hasMany('Assembly')
@@ -174,8 +174,12 @@ bikeSchema.hasMany('Part', {
 ```
 The reverse `hasMany` relationships that mostly auto generated
 ```javascript
-carSchema.belongsTo('Rating')
-bikeSchema.belongsTo('Rating')
+carSchema.hasOne('Rating', {
+  as: 'vehicle'
+})
+bikeSchema.hasOne('Rating', {
+  as: 'vehicle'
+})
 
 const ratingSchema = new Schema()
 ratingSchema.polymorphic(['Bike', 'Car'], {
@@ -183,6 +187,7 @@ ratingSchema.polymorphic(['Bike', 'Car'], {
 })
 ratingSchema.belongsTo('Alien')
 
+alienSchema.hasOne('Rating')
 alienSchema.hasOne(['Bike', 'Car'], {
   through: 'Rating',
   throughWith: 'vehicle',
@@ -190,6 +195,30 @@ alienSchema.hasOne(['Bike', 'Car'], {
 })
 ```
 Imaging an alien sweepstakes where each alien may only rate one vehicle. `hasOne` can also define `polymorphic` `through` relationship.
+```javascript
+carSchema.belongsTo('Settings')
+bikeSchema.belongsTo('Settings')
+
+const settingsSchema = new Schema()
+settingsSchema.hasOne(['Bike', 'Car'], {
+  localField: vehicle
+})
+```
+This is a very inefficient schema (pseudo polymorphic) should be avoided, though if needed can be done as shown above.
+```javascript
+carSchema.polymorphic(['Settings', 'Options'], {
+  localField: 'solutions'
+})
+bikeSchema.polymorphic(['Settings', 'Options'], {
+  localField: 'solutions'
+})
+
+settingsSchema.hasOne(['Bike', 'Car'], {
+  localField: 'solutionVehicle',
+  as: 'solutions'
+})
+```
+This is an extremely loosely define schema and highly inefficient, but can be used to simply query for an very chaotic relationship.
 ```javascript
 const Rider = mongoose.model('Rider', riderSchema)
 const Bike = mongoose.model('Bike', bikeSchema)
@@ -200,5 +229,6 @@ const Car = mongoose.model('Car', carSchema)
 const Assembly = mongoose.model('Assembly', assemblySchema)
 const Part = mongoose.model('Part', partSchema)
 const Rating = mongoose.model('Rating', ratingSchema)
+const Settings = mongoose.model('Settings', settingsSchema)
 ```
 Make sure the model is defined after all the schema fields. Otherwise the getters and setters on the model instance will miss behave

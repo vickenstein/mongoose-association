@@ -16,7 +16,7 @@ describe("assign association class", () => {
   })
   describe("#associations", () => {
     it('create an association record on the model', () => {
-      assert.isOk(_.get(Rating, 'schema.associations.polymorphic.indexedByForeignKey.vehicleId'), 'auto generate correct foreignKey')
+      assert.isOk(_.get(Rating, 'schema.associations.polymorphic.indexedByForeignKey.vehicleId'), 'auto generate correct foreignField')
       assert.strictEqual(_.get(Rating, 'schema.associations.polymorphic.indexedByForeignKey.vehicleId').localField, 'vehicle', 'auto generate correct virtual localField')
     })
   })
