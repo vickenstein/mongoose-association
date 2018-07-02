@@ -1,6 +1,8 @@
 const inflection = require('inflection')
 const decapitalize = string => `${string.charAt(0).toLowerCase()}${string.substr(1)}`
 const idlize = string => `${string}Id`
+const QueryBuilder = require('./QueryBuilder')
+const _ = require('lodash')
 
 class AssociationsBase {
   constructor() {
@@ -30,6 +32,21 @@ class BelongsToAssociation {
     this.modelName = modelName
     this.localField = localField || decapitalize(modelName)
     this.foreignField = foreignField || idlize(this.localField)
+  }
+
+  findFor(document) {
+
+    if (document instanceof Array) return this.findManyFor(document)
+
+    const { modelName, foreignField } = this
+    const foreignFieldValue = document[foreignField]
+    return QueryBuilder.findOne(modelName, '_id', foreignFieldValue)
+  }
+
+  findManyFor(documents) {
+    const { modelName, foreignField } = this
+    const foreignFieldValues = documents.map(document => document[foreignField])
+    return QueryBuilder.find(modelName, '_id', foreignFieldValues)
   }
 }
 
@@ -62,6 +79,16 @@ class HasManyAssociations extends AssociationsBase {
     this.index(association)
     return association
   }
+
+  findFor(document) {
+    if (document instanceof Array) return this.findManyFor(document)
+
+
+  }
+
+  findManyFor(documents) {
+
+  }
 }
 
 class HasManyAssociation {
@@ -92,6 +119,29 @@ class PolymorphicAssociation {
     this.foreignModelNames = foreignModelNames
     this.localField = localField
     this.foreignField = foreignField || idlize(localField)
+  }
+
+  findFor(document) {
+
+    if (document instanceof Array) return this.findManyFor(document)
+
+    const { foreignField } = this
+    const polymorphicValue = document[foreignField]
+    const modelName = document[`${foreignField}Type`]
+    return QueryBuilder.findOne(modelName, '_id', polymorphicValue)
+  }
+
+  findManyFor(documents) {
+    const { foreignField } = this
+    const modelNames = _.uniq(documents.map(document => document[`${foreignField}Type`]))
+    const returns = {}
+    modelNames.forEach(modelName => {
+      const filter = {}
+      filter[`${foreignField}Type`] = modelName
+      const polymorphicValues = _.filter(documents, filter).map(document => document[foreignField])
+      returns[modelName] = QueryBuilder.find(modelName, '_id', polymorphicValues)
+    })
+    return returns
   }
 }
 

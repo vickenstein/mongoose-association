@@ -16,7 +16,7 @@ module.exports = class SchemaMixin {
     this.defineBelongsToVirtual(association)
   }
 
-  defineBelongsToSchema({ modelName, localField, foreignField }, schemaOptions) {
+  defineBelongsToSchema({ modelName, foreignField }, schemaOptions) {
     _.merge(schemaOptions, {
       type: ObjectId,
       ref: modelName,
@@ -32,11 +32,12 @@ module.exports = class SchemaMixin {
     this.add(schema)
   }
 
-  defineBelongsToVirtual({ modelName, localField, foreignField }) {
+  defineBelongsToVirtual(association) {
+    const { modelName, localField, foreignField } = association
     this.virtual(localField).get(async function() {
       const _id = this._doc[foreignField]
       if (_id.constructor.name !== 'ObjectID') return _id
-      this[foreignField] = await this.model(modelName).findOne({ _id })
+      this[foreignField] = await association.findFor(this)
       return this._doc[foreignField]
     }).set(function(value) {
       this[foreignField] = value
@@ -56,7 +57,8 @@ module.exports = class SchemaMixin {
     this.defineHasOneVirtual(association)
   }
 
-  defineHasOneVirtual({foreignModelName, localField, foreignField, as, through}) {
+  defineHasOneVirtual(association) {
+    const { foreignModelName, localField, foreignField, as, through } = association
     this.virtual(localField).get(async function() {
       if (!this[`_${localField}`]) {
         const model = this.constructor
@@ -77,14 +79,20 @@ module.exports = class SchemaMixin {
         } else {
           const foreignModel = this.model(foreignModelName)
           if (through) {
-            // console.log('through', foreignModelName, foreignModel)
-            // const results = await foreignModel.find().aggregate([{
-            //   $lookup: {
-            //     "from": through,
-            //     localField:
-            //   }
-            // }])
-            // console.log(results)
+            console.log('through', foreignModelName, foreignModel)
+            console.log(this.model(through).collection.name)
+            const results = await foreignModel.aggregate([{
+              $lookup: {
+                from: this.model(through).collection.name,
+                localField: '_id',
+                foreignField: 'helmetId',
+                as: 'rider'
+              },
+              $in: {
+
+              }
+            }])
+            console.log(results)
           } else {
             const key = _.isFunction(foreignField) ? foreignField(modelName) : foreignField
             const isPolymorphic = _.get(foreignModel, `schema.associations.polymorphic.indexedByForeignKey.${key}`)
@@ -140,7 +148,7 @@ module.exports = class SchemaMixin {
     this.definePolymorphicVirtual(association)
   }
 
-  definePolymorphicSchema({ foreignModelNames, localField, foreignField }, schemaOptions) {
+  definePolymorphicSchema({ foreignModelNames, foreignField }, schemaOptions) {
     _.merge(schemaOptions, {
       type: ObjectId
     })
@@ -154,13 +162,14 @@ module.exports = class SchemaMixin {
     this.add(schema)
   }
 
-  definePolymorphicVirtual({ foreignModelNames, localField, foreignField }) {
+  definePolymorphicVirtual(association) {
+    const { foreignModelNames, localField, foreignField } = association
     this.virtual(localField).get(async function() {
       if (!this[`_${localField}`]) {
         const _id = this[foreignField]
         const foreignModelName = this[`${foreignField}Type`]
         if (!_id) return null
-        this[`_${localField}`] = await this.model(foreignModelName).findOne( { _id } )
+        this[`_${localField}`] = await association.findFor(this)
       }
       return this[`_${localField}`]
     }).set(function(value) {

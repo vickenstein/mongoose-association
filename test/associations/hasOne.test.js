@@ -13,11 +13,13 @@ const Helmet = mongoose.model('Helmet')
 const Settings = mongoose.model('Settings')
 
 describe("assign association class", () => {
+
   before(() => {
     return new Promise((resolve) => {
       drop(resolve)
     })
   })
+
   describe("#associations", () => {
     it('create an association record on the model', () => {
       // console.log(_.get(Alien, 'schema.associations.hasOne.indexedByForeignKey'))
@@ -25,6 +27,7 @@ describe("assign association class", () => {
       // assert.strictEqual(_.get(Alien, 'schema.associations.hasOne.indexedByForeignKey.alientId').localField, 'alien', 'auto generate correct virtual localField')
     })
   })
+
   describe("#hasOne", () => {
     it('create and fetch has one association model', async () => {
       const bike = await new Bike().save()
@@ -64,10 +67,16 @@ describe("assign association class", () => {
 
     it('create and fetch hasOne through association model', async () => {
       const bike = await new Bike().save()
+      const bike2 = await new Bike().save()
       const helmet = await new Helmet().save()
+      const helmet2 = await new Helmet().save()
       const rider = await new Rider({
         bike,
         helmet
+      }).save()
+      const rider2 = await new Rider({
+        bike: bike2,
+        helmet: helmet2
       }).save()
       const bikeHelmet = await bike.helmet
       assert.strictEqual(bikeHelmet._id.toString(), helmet._id.toString())
