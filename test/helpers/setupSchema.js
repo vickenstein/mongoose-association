@@ -1,101 +1,110 @@
+const mongoose = require('mongoose')
+const { Schema } = mongoose
 
-const { Schema, model } = require('mongoose')
+const riderSchema = new Schema()
+riderSchema.belongsTo('Bike')
+riderSchema.belongsTo('Helmet')
 
-const RiderSchema = new Schema()
-RiderSchema.belongsTo('Bike')
-RiderSchema.belongsTo('Helmet')
-
-const BikeSchema = new Schema()
-BikeSchema.hasOne('Rider')
-BikeSchema.hasOne('Helmet', {
+const bikeSchema = new Schema()
+bikeSchema.hasOne('Rider')
+bikeSchema.hasOne('Helmet', {
   through: 'Rider'
 })
 
-const HelmetSchema = new Schema()
-HelmetSchema.hasOne('Rider')
-HelmetSchema.hasOne('Bike', {
+const helmetSchema = new Schema()
+helmetSchema.hasOne('Rider')
+helmetSchema.hasOne('Bike', {
   through: 'Rider'
 })
 
-const RegistrationSchema = new Schema()
-RegistrationSchema.belongsTo('Car')
-RegistrationSchema.belongsTo('Alien', {
+const registrationSchema = new Schema()
+registrationSchema.belongsTo('Car')
+registrationSchema.belongsTo('Alien', {
   localField: 'owner'
 })
-RegistrationSchema.belongsTo('Alien', {
+
+registrationSchema.belongsTo('Alien', {
   localField: 'approver',
-  localField: 'approver_id'
+  foreignKey: 'approver_id'
 })
 
-const AlienSchema = new Schema()
-AlienSchema.hasMany('Registration', {
-  foreignKey: 'ownerId'
+const alienSchema = new Schema()
+alienSchema.hasMany('Registration', {
+  as: 'owner'
 })
-AlienSchema.hasMany('Registration', {
+
+alienSchema.hasMany('Registration', {
   localField: 'approvedRegistrations',
   foreignKey: 'approver_id'
 })
-AlienSchema.hasMany('Car', {
+
+alienSchema.hasMany('Car', {
   through: 'Registration',
   throughAs: 'owner'
 })
-AlienSchema.hasMany('Car', {
+
+alienSchema.hasMany('Car', {
   through: 'Registration',
   throughAs: 'approver',
   localField: 'approvedCars'
 })
 
-const CarSchema = new Schema()
-CarSchema.hasMany('Registration')
-CarSchema.hasMany('Alien', {
+const carSchema = new Schema()
+carSchema.hasMany('Registration')
+carSchema.hasMany('Alien', {
   through: 'Registration',
-  throughWith: 'owner'
+  throughBy: 'owner'
 })
 
-const AssemblySchema = new Schema()
-AssemblySchema.polymorphic(['Bike', 'Car'], {
+const assemblySchema = new Schema()
+assemblySchema.polymorphic(['Bike', 'Car'], {
   localField: 'vehicle'
 })
-AssemblySchema.belongsTo('Part')
+assemblySchema.belongsTo('Part')
 
-const PartSchema = new Schema()
-PartSchema.hasMany('Assembly')
-PartSchema.hasMany(['Bike', 'Car'], {
+const partSchema = new Schema()
+partSchema.hasMany('Assembly')
+partSchema.hasMany(['Bike', 'Car'], {
   through: 'Assembly',
-  throughWith: 'vehicle'
+  throughBy: 'vehicle'
 })
 
-CarSchema.hasMany('Assembly')
-CarSchema.hasMany('Part', {
+carSchema.hasMany('Assembly')
+carSchema.hasMany('Part', {
   through: 'Assembly',
   throughAs: 'vehicle'
 })
 
-BikeSchema.hasMany('Assembly')
-BikeSchema.hasMany('Part', {
+bikeSchema.hasMany('Assembly')
+bikeSchema.hasMany('Part', {
   through: 'Assembly',
   throughAs: 'vehicle',
   localField: 'components'
 })
 
-CarSchema.belongsTo('Rating')
-BikeSchema.belongsTo('Rating')
+carSchema.belongsTo('Rating')
+bikeSchema.belongsTo('Rating')
 
-const RatingSchema = new Schema()
-RatingSchema.hasOne(['Bike', 'Car'], {
+const ratingSchema = new Schema()
+ratingSchema.polymorphic(['Bike', 'Car'], {
   localField: 'vehicle'
 })
-RatingSchema.belongsTo('Alien')
+ratingSchema.belongsTo('Alien')
 
-AlienSchema.hasMany(['Bike', 'Car'], {
+alienSchema.hasOne(['Bike', 'Car'], {
   through: 'Rating',
   throughWith: 'vehicle',
-  localField: 'ratedVehicles'
+  localField: 'ratedVehicle'
 })
 
-AlienSchema.hasOne(['Bike', 'Car'], {
-  localField: 'bestRated',
-  scope: () => {}
-})
+const Rider = mongoose.model('Rider', riderSchema)
+const Bike = mongoose.model('Bike', bikeSchema)
+const Helmet = mongoose.model('Helmet', helmetSchema)
+const registration = mongoose.model('Registration', registrationSchema)
+const Alien = mongoose.model('Alien', alienSchema)
+const Car = mongoose.model('Car', carSchema)
+const Assembly = mongoose.model('Assembly', assemblySchema)
+const Part = mongoose.model('Part', partSchema)
+const Rating = mongoose.model('Rating', ratingSchema)
 
 module.exports = () => {}

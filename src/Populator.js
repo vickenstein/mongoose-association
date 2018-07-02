@@ -67,7 +67,23 @@ module.exports = class Populator {
 
   }
 
-  static async polymorphic() {
-
+  static async polymorphic({ localField, foreignKey }, documents, fields) {
+    if (_.isArray(documents)) {
+      const types = _.uniq(documents.map(document => document[`${foreignKey}Type`]))
+      const recordsMap = {}
+      for (let i = 0; i < types.length; i++) {
+        const modelName = types[i]
+        const filter = {}
+        filter[`${foreignKey}Type`] = modelName
+        const _id = _.filter(documents, filter).map(document => document[foreignKey])
+        const records = await mongoose.model(modelName).find({ _id }).populateAssociation(...fields.fields)
+        recordsMap[modelName] = _.keyBy(records, '_id')
+      }
+      documents.forEach(document => {
+        document[localField] = recordsMap[document[`${foreignKey}Type`]][document[foreignKey]]
+      })
+    } else {
+      documents[localField] = await mongoose.model(documents[`${foreignKey}Type`]).findOne({ _id: documents[foreignKey] })
+    }
   }
 }
