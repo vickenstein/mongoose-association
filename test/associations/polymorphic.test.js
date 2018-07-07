@@ -1,63 +1,77 @@
 require('test/specHelper')
 const { assert } = require('chai')
-const _ = require('lodash')
 const mongoose = require('mongoose')
+const Polymorphic = require('src/associations/Polymorphic')
 const drop = require('test/helpers/drop')
 
-const Car = mongoose.model('Car')
+const testSchema = new mongoose.Schema
 const Rating = mongoose.model('Rating')
 const Bike = mongoose.model('Bike')
 
-describe("assign association class", () => {
+describe("Create an polymorphic association", () => {
   before(() => {
     return new Promise((resolve) => {
       drop(resolve)
     })
   })
-  describe("#associations", () => {
-    it('create an association record on the model', () => {
-      assert.isOk(_.get(Rating, 'schema.associations.polymorphic.indexedByForeignKey.vehicleId'), 'auto generate correct foreignField')
-      assert.strictEqual(_.get(Rating, 'schema.associations.polymorphic.indexedByForeignKey.vehicleId').localField, 'vehicle', 'auto generate correct virtual localField')
+
+  describe("#constructor()", () => {
+    it('creates error when missing foreignModelNames parameter', () => {
+      assert.throws(() => { new Polymorphic({}, testSchema) }, "Can\'t create a polymorphic association without specifying any foreignModelName", 'missing property')
+    })
+
+    it('creates error when missing as parameter', () => {
+      assert.throws(() => { new Polymorphic({ foreignModelNames: ['Car', 'Bike'] }, testSchema) }, "Can\'t create a polymorphic association without \'as\' parameter", 'missing property')
+    })
+
+    it('creates the proper foreignModelNames and as', () => {
+      const polymorphic = new Polymorphic({ foreignModelNames: ['Car', 'Bike'], as: 'vehicle' }, testSchema)
+      assert.sameMembers(polymorphic.foreignModelNames, ['Car', 'Bike'])
+      assert.strictEqual(polymorphic.as, 'vehicle')
     })
   })
-  describe("#polymorphic", () => {
-    it('create a mongoose object with Car as association', async () => {
-      const car = await new Car().save()
-      const rating = await new Rating({
-        vehicle: car
-      }).save()
-      assert.strictEqual(rating.vehicleId, car._id)
-      assert.strictEqual(rating.vehicleIdType, 'Car')
+
+  describe("get #localField", () => {
+    it('get the property where the reference id is stored', () => {
+      const polymorphic = new Polymorphic({ foreignModelNames: ['Car', 'Bike'], as: 'vehicle' }, testSchema)
+      assert.strictEqual(polymorphic.localField, 'vehicleId')
     })
 
-    it('create a mongoose object with Bike as association', async () => {
+    it('get the property where the reference id is stored with custom localField', () => {
+      const polymorphic = new Polymorphic({ foreignModelNames: ['Car', 'Bike'], as: 'vehicle', localField: 'vehicle_id' }, testSchema)
+      assert.strictEqual(polymorphic.localField, 'vehicle_id')
+    })
+  })
+
+  describe("get #typeField", () => {
+    it('get the property where the reference id is stored', () => {
+      const polymorphic = new Polymorphic({ foreignModelNames: ['Car', 'Bike'], as: 'vehicle' }, testSchema)
+      assert.strictEqual(polymorphic.typeField, 'vehicleIdType')
+    })
+
+    it('get the property where the reference id is stored with custom localField', () => {
+      const polymorphic = new Polymorphic({ foreignModelNames: ['Car', 'Bike'], as: 'vehicle', localField: 'vehicle_id' }, testSchema)
+      assert.strictEqual(polymorphic.typeField, 'vehicle_idType')
+    })
+
+    it('get the property where the reference id is stored with custom localField and typeField', () => {
+      const polymorphic = new Polymorphic({ foreignModelNames: ['Car', 'Bike'], as: 'vehicle', localField: 'vehicle_id', typeField: 'vehicle_id_type' }, testSchema)
+      assert.strictEqual(polymorphic.typeField, 'vehicle_id_type')
+    })
+  })
+
+  describe("#findFor()", () => {
+    it('get the associated object', async () => {
       const bike = await new Bike().save()
-      const rating = await new Rating({
+      await new Rating({
         vehicle: bike
       }).save()
-      assert.strictEqual(rating.vehicleId, bike._id)
-      assert.strictEqual(rating.vehicleIdType, 'Bike')
-    })
 
-    it('fetch association through its localField', async () => {
       const rating = await Rating.findOne()
-      const vehicle = await rating.vehicle
-      assert.isOk(vehicle, 'fetched a vehicle')
-      assert.strictEqual(vehicle.constructor.modelName, 'Car')
-    })
+      const ratingBike = await rating.vehicle
 
-    it('fetch single association via populate to cache request', async () => {
-      const rating = await Rating.findOne().populateAssociation('vehicle')
-      const mongooseRequestCount = mongoose.requestCount
-      const vehicle = await rating.vehicle
-      assert.strictEqual(mongooseRequestCount, mongoose.requestCount, 'no new request to mongo db')
-    })
-
-    it('fetch multiple association via populate to cache request', async () => {
-      const ratings = await Rating.find().populateAssociation('vehicle')
-      const mongooseRequestCount = mongoose.requestCount
-      const vehicle = await ratings[0].vehicle
-      assert.strictEqual(mongooseRequestCount, mongoose.requestCount, 'no new request to mongo db')
+      assert.isOk(ratingBike)
+      assert.strictEqual(ratingBike._id.toString(), bike._id.toString())
     })
   })
 })

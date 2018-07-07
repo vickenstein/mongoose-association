@@ -1,85 +1,84 @@
 require('test/specHelper')
 const { assert } = require('chai')
-const _ = require('lodash')
 const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId
 const drop = require('test/helpers/drop')
 
-const Rating = mongoose.model('Rating')
-const Alien = mongoose.model('Alien')
+const testSchema = new mongoose.Schema
+const Rider = mongoose.model('Rider')
 const Bike = mongoose.model('Bike')
 const Car = mongoose.model('Car')
-const Rider = mongoose.model('Rider')
-const Helmet = mongoose.model('Helmet')
-const Settings = mongoose.model('Settings')
+const Rating = mongoose.model('Rating')
 
-describe("assign association class", () => {
+const BIKECOUNT = 5
+const ObjectIds = []
+for(let i = 0; i < BIKECOUNT; i++) {
+  ObjectIds.push(ObjectId())
+}
+const bikes = []
+const cars = []
+const ratings = []
+const carRatings = []
+const riders = []
 
+describe("Some shared functionality of the has reference", () => {
   before(() => {
     return new Promise((resolve) => {
       drop(resolve)
     })
   })
 
-  describe("#associations", () => {
-    it('create an association record on the model', () => {
-      // console.log(_.get(Alien, 'schema.associations.hasOne.indexedByForeignKey'))
-      // assert.isOk(_.get(Alien, 'schema.associations.hasOne.indexedByForeignKey.alientId'), 'auto generate correct foreignField')
-      // assert.strictEqual(_.get(Alien, 'schema.associations.hasOne.indexedByForeignKey.alientId').localField, 'alien', 'auto generate correct virtual localField')
+  describe('#setup', () => {
+    it('setup', async () => {
+      for(let i = 0; i < BIKECOUNT; i++) {
+        const bike = await new Bike({ _id: ObjectIds[i] }).save()
+        bikes.push(bike)
+        const car = await new Car({ _id: ObjectIds[i] }).save()
+        cars.push(car)
+        const rider = await new Rider({ _id: ObjectIds[i], bike: bikes[i] }).save()
+        riders.push(rider)
+        const rating = await new Rating({ _id: ObjectIds[i], vehicle: bikes[i] }).save()
+        ratings.push(rating)
+        const carRating = await new Rating({ vehicle: cars[i] }).save()
+        carRatings.push(carRating)
+      }
     })
   })
 
-  describe("#hasOne", () => {
-    it('create and fetch has one association model', async () => {
-      const bike = await new Bike().save()
-      const rider = await new Rider({
-        bike
-      }).save()
-      const bikeRider = await bike.rider
-      assert.strictEqual(bikeRider._id.toString(), rider._id.toString())
+  describe('#findFor()', () => {
+    it('get the associated belongsTo object', async () => {
+      // bike <- rider
+      const foundBike = await Bike.findOne({ _id: ObjectIds[0] })
+      const bikeRider = await foundBike.rider
+
+      assert.isOk(bikeRider)
+      assert.strictEqual(bikeRider._id.toString(), riders[0]._id.toString())
     })
 
-    it('create and fetch has one association model on polymorphic type', async () => {
-      const bike = await new Bike().save()
-      const rating = await new Rating({
-        vehicle: bike
-      }).save()
-      const bikeRating = await bike.rating
-      assert.strictEqual(bikeRating._id.toString(), rating._id.toString())
+    it('get the associated polymorphic object', async () => {
+      // car <- rating
+      const foundCar = await Car.findOne({ _id: ObjectIds[0] })
+      const carRating = await foundCar.rating
+
+      assert.isOk(carRating)
+      assert.strictEqual(carRating._id.toString(), carRatings[0]._id.toString())
     })
 
-    it('create and fetch hasOne association model on multiple types', async () => {
-      const settings = await new Settings().save()
-      const bike = await new Bike({
-        settings
-      }).save()
-      const vehicle = await settings.vehicle
-      assert.strictEqual(vehicle._id.toString(), bike._id.toString())
+    it('get the associated object through a polymorphic relationship', async () => {
+      // rating => bike <- rider
+      const rating = await Rating.findOne({ _id: ObjectIds[0] })
+      const rider = await rating.rider
+      assert.isOk(rider)
+      assert.strictEqual(rider.constructor.modelName, 'Rider')
+      assert.strictEqual(rider._id.toString(), riders[0]._id.toString())
     })
 
-    it('create and fetch hasOne association model on multiple types that are polymorphic', async () => {
-      const settings = await new Settings().save()
-      const car = await new Car({
-        solutions: settings
-      }).save()
-      const solutionVehicle = await settings.solutionVehicle
-      assert.strictEqual(solutionVehicle._id.toString(), car._id.toString())
-    })
-
-    it('create and fetch hasOne through association model', async () => {
-      const bike = await new Bike().save()
-      const bike2 = await new Bike().save()
-      const helmet = await new Helmet().save()
-      const helmet2 = await new Helmet().save()
-      const rider = await new Rider({
-        bike,
-        helmet
-      }).save()
-      const rider2 = await new Rider({
-        bike: bike2,
-        helmet: helmet2
-      }).save()
-      const bikeHelmet = await bike.helmet
-      assert.strictEqual(bikeHelmet._id.toString(), helmet._id.toString())
+    it('get the associated object through a polymorphic relationship', async () => {
+      // rider -> bike <= rating
+      const rider = await Rider.findOne({ _id: ObjectIds[0] })
+      const riderRating = await rider.rating
+      assert.isOk(riderRating)
+      assert.strictEqual(riderRating.constructor.modelName, 'Rating')
     })
   })
 })

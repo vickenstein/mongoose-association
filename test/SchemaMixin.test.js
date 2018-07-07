@@ -1,15 +1,27 @@
 require('test/specHelper')
 const { assert } = require('chai')
-const { Schema } = require('mongoose')
+const mongoose = require('mongoose')
+const { Schema } = mongoose
+
+const Bike = mongoose.model('Bike')
 
 describe("assign association class", () => {
-  describe("static #assign", () => {
+  describe("#findAssociation()", () => {
+    it('find already defined associations', () => {
+      const testSchema = new Schema()
+      assert.throws(() => { testSchema.findAs('test', 'test') }, 'this schema does not have any associations')
+      assert.isOk(Bike.findAs('rider'))
+      assert.isNotOk(Bike.findAs('surfer'))
+    })
+  })
+
+  describe("static #assign()", () => {
     it('resulting class has methods of mongoose association', () => {
-      const TestSchema = new Schema()
-      assert.isOk(TestSchema.belongsTo)
-      assert.isOk(TestSchema.hasOne)
-      assert.isOk(TestSchema.hasMany)
-      assert.isOk(TestSchema.polymorphic)
+      const testSchema = new Schema()
+      assert.isOk(testSchema.belongsTo)
+      assert.isOk(testSchema.hasOne)
+      assert.isOk(testSchema.hasMany)
+      assert.isOk(testSchema.polymorphic)
     })
   })
 })

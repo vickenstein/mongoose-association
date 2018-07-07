@@ -3,12 +3,11 @@ const mongoose = require('mongoose')
 const Query = mongoose.Query
 const _exec = Query.prototype.exec
 const Fields = require('./Fields')
-
-const ASSOCIATION_TYPES = ['belongsTo', 'polymorphic', 'hasMany', 'hasOne']
+const Associations = require('./Associations')
 
 module.exports = class Populator {
   static get associationTypes() {
-    return ASSOCIATION_TYPES
+    return Associations.types
   }
 
   static checkFields(populateFields) {

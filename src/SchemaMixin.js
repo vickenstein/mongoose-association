@@ -4,158 +4,65 @@ const ObjectId = mongoose.Schema.Types.ObjectId
 const Associations = require('./associations')
 
 module.exports = class SchemaMixin {
-  belongsTo(modelName, { localField, foreignField } = {}, schemaOptions = {}) {
-    if (!this.associations) this.associations = new Associations
-    const association = this.associations.add('belongsTo', {
-      modelName,
-      localField,
-      foreignField
-    })
+  findAs(as) {
+    if (!this.associations) throw 'this schema does not have any associations'
+    return this.associations.findAs(as)
+  }
+
+  belongsTo(foreignModelName, options = {}, schemaOptions = {}) {
+    if (!this.associations) this.associations = new Associations(this)
+    const association = this.associations.add('belongsTo', _.merge({}, options, { foreignModelName }))
 
     this.defineBelongsToSchema(association, schemaOptions)
     this.defineBelongsToVirtual(association)
   }
 
-  defineBelongsToSchema({ modelName, foreignField }, schemaOptions) {
+  defineBelongsToSchema({ foreignModelName, localField }, schemaOptions) {
     _.merge(schemaOptions, {
       type: ObjectId,
-      ref: modelName,
+      ref: foreignModelName,
       get: function() {
-        const _id = this._doc[foreignField]
+        const _id = this._doc[localField]
         if (_id.constructor.name !== 'ObjectID') return _id._id
         return _id
       }
     })
 
     const schema = {}
-    schema[foreignField] = schemaOptions
+    schema[localField] = schemaOptions
     this.add(schema)
   }
 
   defineBelongsToVirtual(association) {
-    const { modelName, localField, foreignField } = association
-    this.virtual(localField).get(async function() {
-      const _id = this._doc[foreignField]
-      if (_id.constructor.name !== 'ObjectID') return _id
-      this[foreignField] = await association.findFor(this)
-      return this._doc[foreignField]
+    const { as, localField } = association
+    this.virtual(as).get(async function() {
+      const reference = this._doc[localField] // using native mongoose localField populate design for belongsTo
+      if (!reference) return null
+      if (reference.constructor.name !== 'ObjectID') return reference
+      this[localField] = await association.findFor(this)
+      return this._doc[localField] // fetched again from _doc in case of dereferencing
     }).set(function(value) {
-      this[foreignField] = value
+      this[localField] = value
     })
   }
 
-  // todo: through association
-  hasOne(foreignModelName, { localField, foreignField, as, through } = {}) {
-    if (!this.associations) this.associations = new Associations
-    const association = this.associations.add('hasOne', {
-      foreignModelName,
-      localField,
-      foreignField,
-      as,
-      through
-    })
-    this.defineHasOneVirtual(association)
-  }
 
-  defineHasOneVirtual(association) {
-    const { foreignModelName, localField, foreignField, as, through } = association
-    this.virtual(localField).get(async function() {
-      if (!this[`_${localField}`]) {
-        const model = this.constructor
-        const { modelName } = model
-        if (foreignModelName instanceof Array) {
-          for (let i = 0; i < foreignModelName.length; i++) {
-            const foreignModel = this.model(foreignModelName[i])
-            const key = _.isFunction(foreignField) ? foreignField(modelName) : foreignField
-            const isPolymorphic = _.get(foreignModel, `schema.associations.polymorphic.indexedByForeignKey.${key}`)
-            const query = {}
-            query[key] = this._id
-            const record = await foreignModel.findOne(query)
-            if (record) {
-              this[`_${localField}`] = record
-              break
-            }
-          }
-        } else {
-          const foreignModel = this.model(foreignModelName)
-          if (through) {
-            console.log('through', foreignModelName, foreignModel)
-            console.log(this.model(through).collection.name)
-            const results = await foreignModel.aggregate([{
-              $lookup: {
-                from: this.model(through).collection.name,
-                localField: '_id',
-                foreignField: 'helmetId',
-                as: 'rider'
-              },
-              $in: {
-
-              }
-            }])
-            console.log(results)
-          } else {
-            const key = _.isFunction(foreignField) ? foreignField(modelName) : foreignField
-            const isPolymorphic = _.get(foreignModel, `schema.associations.polymorphic.indexedByForeignKey.${key}`)
-            const query = {}
-            query[key] = this._id
-            if (isPolymorphic) query[`${key}Type`] = modelName
-            this[`_${localField}`] = await foreignModel.findOne(query)
-          }
-        }
-      }
-      return this[`_${localField}`]
-    })
-  }
-
-  // todo: through association
-  hasMany(foreignModelName, { localField, foreignField } = {}) {
-    if (!this.associations) this.associations = new Associations
-    const association = this.associations.add('hasMany', {
-      foreignModelName,
-      localField,
-      foreignField
-    })
-
-    this.defineHasManyVirtual(association)
-  }
-
-  defineHasManyVirtual({ foreignModelName, localField, foreignField }) {
-    this.virtual(localField).get(async function() {
-      if (!this[`_${localField}`]) {
-        const model = this.constructor
-        const { modelName } = model
-        const foreignModel = this.model(foreignModelName)
-        const key = _.isFunction(foreignField) ? foreignField(modelName) : foreignField
-        const isPolymorphic = _.get(foreignModel, `schema.associations.polymorphic.indexedByForeignKey.${key}`)
-        const query = {}
-        query[key] = this._id
-        if (isPolymorphic) query[`${key}Type`] = modelName
-        this[`_${localField}`] = await foreignModel.find(query)
-      }
-      return this[`_${localField}`]
-    })
-  }
-
-  polymorphic(foreignModelNames = [], { localField, foreignField } = {}, schemaOptions = {}) {
-    if (!this.associations) this.associations = new Associations
-    const association = this.associations.add('polymorphic', {
-      foreignModelNames,
-      localField,
-      foreignField
-    })
+  polymorphic(foreignModelNames = [], options = {}, schemaOptions = {}) {
+    if (!this.associations) this.associations = new Associations(this)
+    const association = this.associations.add('polymorphic', _.merge({}, options, { foreignModelNames }))
 
     this.definePolymorphicSchema(association, schemaOptions)
     this.definePolymorphicVirtual(association)
   }
 
-  definePolymorphicSchema({ foreignModelNames, foreignField }, schemaOptions) {
+  definePolymorphicSchema({ foreignModelNames, localField, typeField }, schemaOptions) {
     _.merge(schemaOptions, {
       type: ObjectId
     })
 
     const schema = {}
-    schema[foreignField] = schemaOptions
-    schema[`${foreignField}Type`] = {
+    schema[localField] = schemaOptions
+    schema[typeField] = {
       type: String,
       enum: foreignModelNames
     }
@@ -163,19 +70,45 @@ module.exports = class SchemaMixin {
   }
 
   definePolymorphicVirtual(association) {
-    const { foreignModelNames, localField, foreignField } = association
-    this.virtual(localField).get(async function() {
-      if (!this[`_${localField}`]) {
-        const _id = this[foreignField]
-        const foreignModelName = this[`${foreignField}Type`]
-        if (!_id) return null
-        this[`_${localField}`] = await association.findFor(this)
-      }
-      return this[`_${localField}`]
+    const { as, $as, localField, typeField } = association
+    this.virtual(as).get(async function() {
+      if (!this._doc[localField]) return null
+      if (!this[$as]) this[$as] = association.findFor(this)
+      return this[$as]
     }).set(function(value) {
-      this[`${foreignField}Type`] = value.constructor.modelName
-      this[foreignField] = value._id
-      this[`_${localField}`] = value
+      this[typeField] = value.constructor.modelName
+      this[localField] = value._id
+      this[$as] = value
+    })
+  }
+
+  hasOne(foreignModelName, options = {}) {
+    if (!this.associations) this.associations = new Associations(this)
+    const association = this.associations.add('hasOne', _.merge({}, options, { foreignModelName }))
+
+    this.defineHasOneVirtual(association)
+  }
+
+  defineHasOneVirtual(association) {
+    const { foreignModelName, as, $as } = association
+    this.virtual(as).get(async function() {
+      if (!this[$as]) this[$as] = association.findFor(this)
+      return this[$as]
+    })
+  }
+
+  hasMany(foreignModelName, options = {}) {
+    if (!this.associations) this.associations = new Associations(this)
+    const association = this.associations.add('hasMany', _.merge({}, options, { foreignModelName }))
+
+    // this.defineHasManyVirtual(association)
+  }
+
+  defineHasManyVirtual(association) {
+    const { foreignModelNames, as, $as } = association
+    this.virtual(as).get(async function() {
+      if (!this[$as]) this[$as] = association.findFor(this)
+      return this[$as]
     })
   }
 

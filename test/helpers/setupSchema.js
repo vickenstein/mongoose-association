@@ -20,12 +20,12 @@ helmetSchema.hasOne('Bike', {
 const registrationSchema = new Schema()
 registrationSchema.belongsTo('Car')
 registrationSchema.belongsTo('Alien', {
-  localField: 'owner'
+  as: 'owner'
 })
 
 registrationSchema.belongsTo('Alien', {
-  localField: 'approver',
-  foreignField: 'approver_id'
+  as: 'approver',
+  localField: 'approver_id'
 })
 
 const alienSchema = new Schema()
@@ -34,7 +34,7 @@ alienSchema.hasMany('Registration', {
 })
 
 alienSchema.hasMany('Registration', {
-  localField: 'approvedRegistrations',
+  as: 'approvedRegistrations',
   foreignField: 'approver_id'
 })
 
@@ -46,7 +46,7 @@ alienSchema.hasMany('Car', {
 alienSchema.hasMany('Car', {
   through: 'Registration',
   throughAs: 'approver',
-  localField: 'approvedCars'
+  as: 'approvedCars'
 })
 
 const carSchema = new Schema()
@@ -58,13 +58,18 @@ carSchema.hasMany('Alien', {
 
 const assemblySchema = new Schema()
 assemblySchema.polymorphic(['Bike', 'Car'], {
-  localField: 'vehicle'
+  as: 'vehicle'
 })
 assemblySchema.belongsTo('Part')
 
 const partSchema = new Schema()
 partSchema.hasMany('Assembly')
-partSchema.hasMany(['Bike', 'Car'], {
+partSchema.hasMany('Bike', {
+  through: 'Assembly',
+  throughBy: 'vehicle'
+})
+
+partSchema.hasMany('Car', {
   through: 'Assembly',
   throughBy: 'vehicle'
 })
@@ -79,47 +84,35 @@ bikeSchema.hasMany('Assembly')
 bikeSchema.hasMany('Part', {
   through: 'Assembly',
   throughAs: 'vehicle',
-  localField: 'components'
+  as: 'components'
 })
 
 carSchema.hasOne('Rating', {
-  as: 'vehicle'
+  with: 'vehicle'
 })
 bikeSchema.hasOne('Rating', {
-  as: 'vehicle'
+  with: 'vehicle'
 })
 
 const ratingSchema = new Schema()
 ratingSchema.polymorphic(['Bike', 'Car'], {
-  localField: 'vehicle'
+  as: 'vehicle'
 })
 ratingSchema.belongsTo('Alien')
+ratingSchema.hasOne('Rider', {
+  with: 'vehicle',
+  through: 'Bike'
+})
+riderSchema.hasOne('Rating', {
+  through: 'Bike',
+  throughWith: 'vehicle'
+})
 
 alienSchema.hasOne('Rating')
-alienSchema.hasOne(['Bike', 'Car'], {
+alienSchema.hasOne('Car', {
   through: 'Rating',
-  throughWith: 'vehicle',
-  localField: 'ratedVehicle'
-})
-
-carSchema.belongsTo('Settings')
-bikeSchema.belongsTo('Settings')
-
-const settingsSchema = new Schema()
-settingsSchema.hasOne(['Bike', 'Car'], {
-  localField: 'vehicle'
-})
-
-carSchema.polymorphic(['Settings', 'Options'], {
-  localField: 'solutions'
-})
-bikeSchema.polymorphic(['Settings', 'Options'], {
-  localField: 'solutions'
-})
-
-settingsSchema.hasOne(['Bike', 'Car'], {
-  localField: 'solutionVehicle',
-  as: 'solutions'
+  throughBy: 'vehicle',
+  as: 'ratedCar'
 })
 
 const Rider = mongoose.model('Rider', riderSchema)
@@ -131,6 +124,5 @@ const Car = mongoose.model('Car', carSchema)
 const Assembly = mongoose.model('Assembly', assemblySchema)
 const Part = mongoose.model('Part', partSchema)
 const Rating = mongoose.model('Rating', ratingSchema)
-const Settings = mongoose.model('Settings', settingsSchema)
 
 module.exports = () => {}
