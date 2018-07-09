@@ -1,5 +1,4 @@
 const Association = require('./Association')
-const QueryBuilder = require('../QueryBuilder')
 
 const OPTIONS = {
   localField: 'name of the property to store the reference id'
@@ -17,19 +16,26 @@ module.exports = class BelongsTo extends Association {
   }
 
   get associationType() {
-    return 'belongsTo'
-  }
-
-  get localField() {
-    return this.define('localField', Association.idlize(this.as))
+    return this.define('associationType', 'belongsTo')
   }
 
   findFor(document) {
-    const { localField } = this
-    return QueryBuilder.findOne({
+    if (document instanceof Array) {
+      return this.findManyFor(document)
+    }
+
+    return BelongsTo.findOne({
       modelName: this.foreignModelName,
       localField: '_id',
-      localFieldValue: document[localField]
+      localFieldValue: document[this.localField]
+    })
+  }
+
+  findManyFor(documents) {
+    return BelongsTo.find({
+      modelName: this.foreignModelName,
+      localField: '_id',
+      localFieldValue: documents.map(document => document[this.localField])
     })
   }
 }

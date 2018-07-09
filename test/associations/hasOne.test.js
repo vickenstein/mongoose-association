@@ -21,6 +21,21 @@ const ratings = []
 const carRatings = []
 const riders = []
 
+async function setupData() {
+  for(let i = 0; i < BIKECOUNT; i++) {
+    const bike = await new Bike({ _id: ObjectIds[i] }).save()
+    bikes.push(bike)
+    const car = await new Car({ _id: ObjectIds[i] }).save()
+    cars.push(car)
+    const rider = await new Rider({ _id: ObjectIds[i], bike: bikes[i] }).save()
+    riders.push(rider)
+    const rating = await new Rating({ _id: ObjectIds[i], vehicle: bikes[i] }).save()
+    ratings.push(rating)
+    const carRating = await new Rating({ vehicle: cars[i] }).save()
+    carRatings.push(carRating)
+  }
+}
+
 describe("Some shared functionality of the has reference", () => {
   before(() => {
     return new Promise((resolve) => {
@@ -28,21 +43,8 @@ describe("Some shared functionality of the has reference", () => {
     })
   })
 
-  describe('#setup', () => {
-    it('setup', async () => {
-      for(let i = 0; i < BIKECOUNT; i++) {
-        const bike = await new Bike({ _id: ObjectIds[i] }).save()
-        bikes.push(bike)
-        const car = await new Car({ _id: ObjectIds[i] }).save()
-        cars.push(car)
-        const rider = await new Rider({ _id: ObjectIds[i], bike: bikes[i] }).save()
-        riders.push(rider)
-        const rating = await new Rating({ _id: ObjectIds[i], vehicle: bikes[i] }).save()
-        ratings.push(rating)
-        const carRating = await new Rating({ vehicle: cars[i] }).save()
-        carRatings.push(carRating)
-      }
-    })
+  before(() => {
+    return setupData()
   })
 
   describe('#findFor()', () => {
@@ -79,6 +81,63 @@ describe("Some shared functionality of the has reference", () => {
       const riderRating = await rider.rating
       assert.isOk(riderRating)
       assert.strictEqual(riderRating.constructor.modelName, 'Rating')
+    })
+  })
+
+  describe("findManyFor()", () => {
+    it('get the associated hasOne through aggregation', async () => {
+      const hasOne = Rider.associate('rating')
+      const aggregate = hasOne.findFor(riders)
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT)
+    })
+  })
+
+  describe("#aggregate()", () => {
+    it('get the associated hasOne using aggregation', async () => {
+      const hasOne = Bike.associate('rider')
+      const aggregate = hasOne.aggregate()
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT)
+    })
+
+    it('get the associated hasOne using aggregation', async () => {
+      const hasOne = Bike.associate('rider')
+      const aggregate = hasOne.aggregate({ documents: bikes[0] })
+      const results = await aggregate
+      assert.strictEqual(results.length, 1)
+      assert.strictEqual(results[0]._id.toString(), bikes[0]._id.toString())
+    })
+
+    it('get the associated polymorphic using aggregation', async () => {
+      const hasOne = Bike.associate('rating')
+      const aggregate = hasOne.aggregate()
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT)
+    })
+
+    it('get the associated polymorphic using aggregation', async () => {
+      const hasOne = Bike.associate('rating')
+      const aggregate = hasOne.aggregate({ documents: bikes[0] })
+      const results = await aggregate
+      assert.strictEqual(results.length, 1)
+      assert.strictEqual(results[0]._id.toString(), bikes[0]._id.toString())
+    })
+
+    it('get the associated hasOne through aggregation', async () => {
+      const hasOne = Rider.associate('rating')
+      const aggregate = hasOne.aggregate()
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT)
+      assert.isOk(results[0].rating)
+    })
+
+    it('get the associated hasOne through aggregation', async () => {
+      const hasOne = Rider.associate('rating')
+      const aggregate = hasOne.aggregate({ documents: riders[0] })
+      const results = await aggregate
+      assert.strictEqual(results.length, 1)
+      assert.isOk(results[0].rating._id.toString(), ratings[0]._id.toString())
     })
   })
 })

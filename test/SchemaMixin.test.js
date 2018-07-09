@@ -6,12 +6,12 @@ const { Schema } = mongoose
 const Bike = mongoose.model('Bike')
 
 describe("assign association class", () => {
-  describe("#findAssociation()", () => {
+  describe("#associatesociation()", () => {
     it('find already defined associations', () => {
       const testSchema = new Schema()
-      assert.throws(() => { testSchema.findAs('test', 'test') }, 'this schema does not have any associations')
-      assert.isOk(Bike.findAs('rider'))
-      assert.isNotOk(Bike.findAs('surfer'))
+      assert.throws(() => { testSchema.associate('test', 'test') }, 'this schema does not have any associations')
+      assert.isOk(Bike.associate('rider'))
+      assert.isNotOk(Bike.associate('surfer'))
     })
   })
 

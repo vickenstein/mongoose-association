@@ -4,9 +4,9 @@ const ObjectId = mongoose.Schema.Types.ObjectId
 const Associations = require('./associations')
 
 module.exports = class SchemaMixin {
-  findAs(as) {
+  associate(as) {
     if (!this.associations) throw 'this schema does not have any associations'
-    return this.associations.findAs(as)
+    return this.associations.associate(as)
   }
 
   belongsTo(foreignModelName, options = {}, schemaOptions = {}) {
@@ -101,7 +101,7 @@ module.exports = class SchemaMixin {
     if (!this.associations) this.associations = new Associations(this)
     const association = this.associations.add('hasMany', _.merge({}, options, { foreignModelName }))
 
-    // this.defineHasManyVirtual(association)
+    this.defineHasManyVirtual(association)
   }
 
   defineHasManyVirtual(association) {

@@ -66,24 +66,29 @@ const partSchema = new Schema()
 partSchema.hasMany('Assembly')
 partSchema.hasMany('Bike', {
   through: 'Assembly',
-  throughBy: 'vehicle'
+  throughAs: 'vehicle'
 })
 
 partSchema.hasMany('Car', {
   through: 'Assembly',
-  throughBy: 'vehicle'
-})
-
-carSchema.hasMany('Assembly')
-carSchema.hasMany('Part', {
-  through: 'Assembly',
   throughAs: 'vehicle'
 })
 
-bikeSchema.hasMany('Assembly')
+
+carSchema.hasMany('Assembly', {
+  with: 'vehicle'
+})
+carSchema.hasMany('Part', {
+  through: 'Assembly',
+  with: 'vehicle'
+})
+
+bikeSchema.hasMany('Assembly', {
+  with: 'vehicle'
+})
 bikeSchema.hasMany('Part', {
   through: 'Assembly',
-  throughAs: 'vehicle',
+  with: 'vehicle',
   as: 'components'
 })
 
@@ -100,12 +105,10 @@ ratingSchema.polymorphic(['Bike', 'Car'], {
 })
 ratingSchema.belongsTo('Alien')
 ratingSchema.hasOne('Rider', {
-  with: 'vehicle',
   through: 'Bike'
 })
 riderSchema.hasOne('Rating', {
-  through: 'Bike',
-  throughWith: 'vehicle'
+  through: 'Bike'
 })
 
 alienSchema.hasOne('Rating')

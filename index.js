@@ -1,10 +1,14 @@
+const _ = require('lodash')
 const SchemaMixin = require('./src/SchemaMixin')
 const Populator = require('./src/Populator')
 const Hydrator = require('./src/Hydrator')
+const Fields = require('./src/Fields')
+
+const POPULATABLE_QUERY = ['find', 'findOne']
 
 const plugin = (Schema, options = {}) => {
-  Schema.statics.findAs = function(as) {
-    return this.schema.findAs(as)
+  Schema.statics.associate = function(as) {
+    return this.schema.associate(as)
   }
 
   Schema.methods.populateAssociation = function(...fields) {
@@ -29,12 +33,20 @@ const patchQueryPrototype = (Query) => {
   Query.prototype.exec = function(options, callback) {
     if (!this._populateAssociation) return _exec.call(this, options, callback)
 
-    const fields = this._populateAssociation
+    const fields = new Fields(...this._populateAssociation)
+
     return new Promise((resolve, reject) => {
+      if (fields.root.length > 1 && _.includes(POPULATABLE_QUERY, this.op)) {
+        const aggregate = Populator.aggregateFromQuery(this)
+        aggregate.then(documents => resolve(documents)).catch(error => {
+          return reject(error), callback(error)
+        })
+      }
+
       _exec.call(this, options, (error, documents) => {
         if (error) return reject(error), callback(error)
         if (!documents) return resolve(documents), callback(null, documents)
-        resolve(Populator.populate(this.model, documents, ...fields))
+        resolve(Populator.populate(this.model, documents, fields))
       })
     })
   }
@@ -45,8 +57,18 @@ const patchAggregatePrototype =(Aggregate) => {
 
   if (Aggregate.prototype.hydrateAssociation) return
 
-  Aggregate.prototype.hydrateAssociation = function(...fields) {
-    this._hydrateAssociation = fields
+  Aggregate.prototype.populateAssociation = function(...fields) {
+    this._populateAssociation = fields
+    return this
+  }
+
+  Aggregate.prototype.hydrateAssociation = function(options) {
+    this._hydrateAssociation = options
+    return this
+  }
+
+  Aggregate.prototype.mapAssociation = function(field) {
+    this._mapAssociation = field
     return this
   }
 
@@ -56,19 +78,24 @@ const patchAggregatePrototype =(Aggregate) => {
   }
 
   Aggregate.prototype.exec = function(callback) {
-    const fields = this._hydrateAssociation
+    const populateAssociation = this._populateAssociation
+    const hydrateAssociation = this._hydrateAssociation
+    const mapAssociation = this._mapAssociation
     const singular = this._singular
 
-    if (!fields || !singular) return _exec.call(this, callback)
+    if (!hydrateAssociation && !mapAssociation && !singular) return _exec.call(this, callback)
 
     return new Promise((resolve, reject) => {
       _exec.call(this, (error, documents) => {
         if (error) return reject(error), callback(error)
         if (!documents) return resolve(documents), callback(null, documents)
-        let results
-        if (fields) results = Hydrator.hydrate(this._model, documents, ...fields)
-        if (singular) results = results[0]
-        resolve(results)
+        if (mapAssociation) {
+          documents = documents.map(document => document[mapAssociation])
+        }
+        if (hydrateAssociation) documents = Hydrator.hydrate(documents, hydrateAssociation)
+        if (populateAssociation) documents = Populator.populate(this.foreignModel || this.model, documents, ...fields)
+        if (singular) documents = documents[0]
+        resolve(documents)
       })
     })
   }

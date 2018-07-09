@@ -1,7 +1,8 @@
 const _ = require('lodash')
 
 module.exports = class Fields {
-  constructor(...fields) {
+  constructor(options, ...fields) {
+    if (options && !(options instanceof Object)) fields.unshift(options)
     this.fields = Fields.reduce(...fields)
   }
 

@@ -5,14 +5,45 @@ const BelongsTo = require('src/associations/BelongsTo')
 const drop = require('test/helpers/drop')
 
 const testSchema = new mongoose.Schema
-const Rider = mongoose.model('Rider')
+
 const Bike = mongoose.model('Bike')
+const Rider = mongoose.model('Rider')
+
+const BIKECOUNT = 5
+
+let riders = []
+let bikes = []
+async function setupData() {
+
+  const bikeAttributes = []
+
+  for(let i = 0; i < BIKECOUNT; i++) {
+    bikeAttributes.push({})
+  }
+
+  bikes = await Bike.create(bikeAttributes)
+
+  const riderAttributes = []
+  for(let i = 0; i < BIKECOUNT; i++) {
+    const bike = bikes[i]
+    riderAttributes.push({
+      bike
+    })
+  }
+
+  riders = await Rider.create(riderAttributes)
+  return true
+}
 
 describe("Create an belongsTo association", () => {
   before(() => {
     return new Promise((resolve) => {
       drop(resolve)
     })
+  })
+
+  before(() => {
+    return setupData()
   })
 
   describe("#constructor()", () => {
@@ -50,15 +81,37 @@ describe("Create an belongsTo association", () => {
 
   describe("#findFor()", () => {
     it('get the belongsTo association for a document', async () => {
-      const bike = await new Bike().save()
-      await new Rider({
-        bike
-      }).save()
-
-      const rider = await Rider.findOne()
+      const rider = await Rider.findOne({ _id: riders[0]._id })
       const riderBike = await rider.bike
       assert.isOk(riderBike, 'found the associated bike')
-      assert.strictEqual(riderBike._id.toString(), bike._id.toString())
+      assert.strictEqual(riderBike._id.toString(), bikes[0]._id.toString())
+    })
+  })
+
+  describe("findManyFor()", () => {
+    it('get the belongsTo association for many documents', async () => {
+      const belongsTo = Rider.associate('bike')
+      const riderBikes = await belongsTo.findManyFor(riders)
+      assert.strictEqual(riderBikes.length, riders.length)
+    })
+  })
+
+  describe("#aggregate()", () => {
+    it('get the associated belongsTo using aggregation', async () => {
+      const belongsTo = Rider.associate('bike')
+      const aggregate = belongsTo.aggregate()
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT)
+    })
+  })
+
+  describe("#aggregate()", () => {
+    it('get the associated belongsTo using aggregation', async () => {
+      const belongsTo = Rider.associate('bike')
+      const aggregate = belongsTo.aggregate({ documents: riders[0] })
+      const results = await aggregate
+      assert.strictEqual(results.length, 1)
+      assert.strictEqual(results[0]._id.toString(), riders[0]._id.toString())
     })
   })
 })

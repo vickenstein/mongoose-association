@@ -1,4 +1,5 @@
-// NODE_PATH=. mocha benchmark/lookupHasMany.js --no-timouts -s 0
+// NODE_PATH=. mocha benchmark/lookupHasMany.js -s 0 --timeout 15000
+
 
 require('test/specHelper')
 const _ = require('lodash')

@@ -1,5 +1,5 @@
 const Association = require('./Association')
-const QueryBuilder = require('../QueryBuilder')
+const mongoose = require('mongoose')
 
 const OPTIONS = {
   foreignModelNames: 'name of the models this belongsTo polymorphically',
@@ -20,11 +20,7 @@ module.exports = class Polymorphic extends Association {
   }
 
   get associationType() {
-    return 'polymorphic'
-  }
-
-  get localField() {
-    return this.define('localField', Association.idlize(this.as))
+    return this.define('associationType', 'polymorphic')
   }
 
   get typeField() {
@@ -32,11 +28,48 @@ module.exports = class Polymorphic extends Association {
   }
 
   findFor(document) {
+    if (document instanceof Array) {
+      return this.findManyFor(document)
+    }
     const { localField, typeField } = this
-    return QueryBuilder.findOne({
+    return Polymorphic.findOne({
       modelName: document[typeField],
       localField: '_id',
       localFieldValue: document[localField]
     })
+  }
+
+  findManyFor(documents) {
+    return Polymorphic.find({
+      modelName: documents[0][this.typeField],
+      localField: '_id',
+      localFieldValue: documents.map(document => document[this.localField])
+    })
+  }
+
+  aggregateMatch(options) {
+    const $match = super.aggregateMatch(options)
+    $match[this.typeField] = options.documents ? options.documents[0][this.typeField] : options.as
+    return $match
+  }
+
+  aggregateLookUp(aggregate, options) {
+    const foreignModel = mongoose.model(options.documents ? options.documents[0][this.typeField] : options.as)
+    const foreignModelCollectionName = foreignModel.collection.name
+    aggregate.lookup({
+      from: foreignModelCollectionName,
+      'let': { localField: this.$localField },
+      pipeline: [{
+        $match: {
+          $expr: { $eq: ['$$localField', this.$foreignField] }
+        }
+      }],
+      as: this.as
+    })
+  }
+
+  aggregate(options = {}) {
+    if (!options.documents && !options.as) throw 'polymorphic aggregation requires an documents or option { as }'
+    return super.aggregate(options)
   }
 }

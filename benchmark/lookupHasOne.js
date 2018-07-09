@@ -9,6 +9,8 @@ const Bike = mongoose.model('Bike')
 const Rider = mongoose.model('Rider')
 const Helmet = mongoose.model('Helmet')
 
+// bike => rider <= helmet
+
 const BIKECOUNT = 100
 
 async function setupData() {

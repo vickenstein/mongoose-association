@@ -56,7 +56,7 @@ describe("Some shared functionality of the has reference", () => {
   describe("get #withAssociation", () => {
     it('fetches the correct withAssociation', () => {
       const Bike = mongoose.model('Bike')
-      const riderAssociation = Bike.findAs('rider')
+      const riderAssociation = Bike.associate('rider')
       const withAssociation = riderAssociation.withAssociation
       assert.isOk(withAssociation)
     })
@@ -65,7 +65,7 @@ describe("Some shared functionality of the has reference", () => {
   describe("get #throughAs", () => {
     it('fetches the correct throughAs', () => {
       const Rating = mongoose.model('Rating')
-      const riderAssociation = Rating.findAs('rider')
+      const riderAssociation = Rating.associate('rider')
       const throughAs = riderAssociation.throughAs
       assert.strictEqual(throughAs, 'rider')
     })
@@ -74,27 +74,9 @@ describe("Some shared functionality of the has reference", () => {
   describe("get #throughAsAssociation", () => {
     it('fetches the correct throughAsAssociation', () => {
       const Rating = mongoose.model('Rating')
-      const riderAssociation = Rating.findAs('rider')
+      const riderAssociation = Rating.associate('rider')
       const throughAsAssociation = riderAssociation.throughAsAssociation
       assert.isOk(throughAsAssociation)
-    })
-  })
-
-  describe("get #throughWith", () => {
-    it('fetches the correct throughWith', () => {
-      const Rating = mongoose.model('Rating')
-      const riderAssociation = Rating.findAs('rider')
-      const throughWith = riderAssociation.throughWith
-      assert.strictEqual(throughWith, 'bike')
-    })
-  })
-
-  describe("get #throughWithAssociation", () => {
-    it('fetches the correct throughWithAssociation', () => {
-      const Rating = mongoose.model('Rating')
-      const riderAssociation = Rating.findAs('rider')
-      const throughWithAssociation = riderAssociation.throughWithAssociation
-      assert.isOk(throughWithAssociation)
     })
   })
 })

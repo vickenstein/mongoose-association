@@ -1,49 +1,20 @@
+const inflection = require('inflection')
 const Has = require('./Has')
 
 module.exports = class HasMany extends Has {
+  static get query() {
+    return HasMany.find
+  }
+
   get associationType() {
-    return 'hasOne'
+    return this.define('associationType', 'hasMany')
   }
 
-  findFor(document) {
-    const { through, withAssociation } = this
-    if (through) {
-      return this.aggregateFor(document)
-    } else {
-      const { modelName, associationType, localField } = withAssociation
-      if (associationType === 'polymorphic') {
-        const { typeField } = withAssociation
-        return QueryBuilder.find({
-          modelName,
-          localField,
-          localFieldValues: document._id,
-          typeField,
-          type: document.constructor.modelName
-        })
-      } else {
-        return QueryBuilder.find({
-          modelName,
-          localField,
-          localFieldValues: document._id
-        })
-      }
-    }
+  get as() {
+    return this.define('as', inflection.pluralize(Has.decapitalize(this.foreignModelName)))
   }
 
-  aggregateFor(document) {
-
-    const throughReflection = new ThroughReflection(this)
-
-    const aggregate = throughReflection.aggregate()
-
-    aggregate.unwind(throughReflection.$throughAs)
-
-    // if (foreignTypeField) {
-    //   const match = {}
-
-    //   aggregate.match(match)
-    // }
-
-    return aggregate.hydrateAssociation().singular()
+  get throughWith() {
+    return this.define('throughWith', this.throughModelName && inflection.pluralize(Has.decapitalize(this.throughModelName)))
   }
 }

@@ -23,7 +23,7 @@ module.exports = class Associations {
     this.asIndexed = {}
   }
 
-  findAs(as) {
+  associate(as) {
     return this.asIndexed[as]
   }
 

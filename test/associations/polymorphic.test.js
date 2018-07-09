@@ -5,14 +5,44 @@ const Polymorphic = require('src/associations/Polymorphic')
 const drop = require('test/helpers/drop')
 
 const testSchema = new mongoose.Schema
-const Rating = mongoose.model('Rating')
 const Bike = mongoose.model('Bike')
+const Rating = mongoose.model('Rating')
+
+const BIKECOUNT = 5
+
+let ratings = []
+let bikes = []
+async function setupData() {
+
+  const bikeAttributes = []
+
+  for(let i = 0; i < BIKECOUNT; i++) {
+    bikeAttributes.push({})
+  }
+
+  bikes = await Bike.create(bikeAttributes)
+
+  const ratingAttributes = []
+  for(let i = 0; i < BIKECOUNT; i++) {
+    const bike = bikes[i]
+    ratingAttributes.push({
+      vehicle: bike
+    })
+  }
+
+  ratings = await Rating.create(ratingAttributes)
+  return true
+}
 
 describe("Create an polymorphic association", () => {
   before(() => {
     return new Promise((resolve) => {
       drop(resolve)
     })
+  })
+
+  before(() => {
+    return setupData()
   })
 
   describe("#constructor()", () => {
@@ -62,16 +92,47 @@ describe("Create an polymorphic association", () => {
 
   describe("#findFor()", () => {
     it('get the associated object', async () => {
-      const bike = await new Bike().save()
-      await new Rating({
-        vehicle: bike
-      }).save()
-
-      const rating = await Rating.findOne()
+      const rating = await Rating.findOne({ _id: ratings[0]._id })
       const ratingBike = await rating.vehicle
 
       assert.isOk(ratingBike)
-      assert.strictEqual(ratingBike._id.toString(), bike._id.toString())
+      assert.strictEqual(ratingBike._id.toString(), bikes[0]._id.toString())
+    })
+  })
+
+  describe("#findFor()", () => {
+    it('get the associated object', async () => {
+      const polymorphic = Rating.associate('vehicle')
+      const ratedBikes = await polymorphic.findManyFor(ratings)
+      assert.isOk(ratedBikes)
+      assert.strictEqual(ratedBikes.length, BIKECOUNT)
+    })
+  })
+
+  describe("#aggregate()", () => {
+    it('get an error creating polymorphic aggregate without documents or option { as }', async () => {
+      const polymorphic = Rating.associate('vehicle')
+      assert.throws(() => { polymorphic.aggregate() }, 'polymorphic aggregation requires an documents or option { as }')
+    })
+  })
+
+
+  describe("#aggregate()", () => {
+    it('get the associated polymorphic using aggregation', async () => {
+      const polymorphic = Rating.associate('vehicle')
+      const aggregate = polymorphic.aggregate({ as: 'Bike' })
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT)
+    })
+  })
+
+  describe("#aggregate()", () => {
+    it('get the associated polymorphic using aggregation', async () => {
+      const polymorphic = Rating.associate('vehicle')
+      const aggregate = polymorphic.aggregate({ documents: ratings[0] })
+      const results = await aggregate
+      assert.strictEqual(results.length, 1)
+      assert.strictEqual(results[0]._id.toString(), ratings[0]._id.toString())
     })
   })
 })

@@ -6,9 +6,6 @@ const Fields = require('./Fields')
 const Associations = require('./Associations')
 
 module.exports = class Populator {
-  static get associationTypes() {
-    return Associations.types
-  }
 
   static checkFields(populateFields) {
     let fields = populateFields
@@ -21,65 +18,16 @@ module.exports = class Populator {
   }
 
   static async populate(model, documents, ...populateFields) {
-    let fields = this.checkFields(populateFields)
-    if (fields.length) {
-      const rootFields = fields.root
-      for (let i = 0; i < rootFields.length; i++) {
-        const field = rootFields[i]
-        await this.populateAssociationField(model, field, documents, fields.children(field))
-      }
-    }
-    return documents
+
   }
 
   static async populateAssociationField(model, field, documents, fields) {
-    const associations = model.schema.associations
-    const associationTypes = this.associationTypes
-    for (let i = 0; i < associationTypes.length; i++) {
-      const associationType = associationTypes[i]
-      const association = _.get(associations, `${associationType}.indexedByLocalField.${field}`)
-      if (association) {
-        return await this[associationType](association, documents, fields)
-      }
-    }
-  }
-
-  static async belongsTo(association, documents, fields) {
-    const { modelName, localField, foreignField } = association
-    if (_.isArray(documents)) {
-      const records = await association.findManyFor(documents).populateAssociation(fields)
-      const recordsMap = _.keyBy(records, '_id')
-      documents.forEach(document => {
-        document[foreignField] = recordsMap[document[foreignField]]
-      })
-    } else {
-      documents[foreignField] = await association.findFor(documents).populateAssociation(fields)
-    }
-  }
-
-  static async hasOne() {
 
   }
 
-  static async hasMany() {
-
-  }
-
-  static async polymorphic(association, documents, fields) {
-    const { localField, foreignField } = association
-    if (_.isArray(documents)) {
-      const queryMap = association.findManyFor(documents)
-      const types = Object.keys(queryMap)
-      for (let i = 0; i < types.length; i++) {
-        const modelName = types[i]
-        const records = await queryMap[modelName].populateAssociation(fields)
-        queryMap[modelName] = _.keyBy(records, '_id')
-      }
-      documents.forEach(document => {
-        document[localField] = queryMap[document[`${foreignField}Type`]][document[foreignField]]
-      })
-    } else {
-      documents[localField] = await association.findFor(documents).populateAssociation(fields)
-    }
+  static aggregateFromQuery(query) {
+    const aggregate = query.model.aggregate().match(query._conditions)
+    if (query.op === 'findOne') aggregate.limit(1).singular()
+    return aggregate
   }
 }

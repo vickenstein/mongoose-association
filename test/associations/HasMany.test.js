@@ -7,16 +7,51 @@ const HasMany = require('src/associations/HasMany')
 const drop = require('test/helpers/drop')
 
 const testSchema = new mongoose.Schema
+const Bike = mongoose.model('Bike')
 const Car = mongoose.model('Car')
 const Assembly = mongoose.model('Assembly')
-const Part = mongoose.model('Assembly')
+const Part = mongoose.model('Part')
+const BIKECOUNT = 5
+const PARTCOUNT = 5
+const PARTPERBIKE = 2
+const ObjectIds = []
+for(let i = 0; i < BIKECOUNT; i++) {
+  ObjectIds.push(ObjectId())
+}
+const bikes = []
+const cars = []
+const ratings = []
+const carRatings = []
+const riders = []
+const parts = []
+const bikeAssemblies = []
+const carAssemblies = []
 
-// const CARCOUNT = 5
-// const ObjectIds = []
-// for(let i = 0; i < CARCOUNT; i++) {
-//   ObjectIds.push()
-// }
-
+async function setupData() {
+  for(let i = 0; i < PARTCOUNT; i++) {
+    const part = await new Part().save()
+    parts.push(part)
+  }
+  for(let i = 0; i < BIKECOUNT; i++) {
+    const bike = await new Bike({ _id: ObjectIds[i] }).save()
+    bikes.push(bike)
+    const car = await new Car({ _id: ObjectIds[i] }).save()
+    cars.push(car)
+    for(let j = 0; j < PARTPERBIKE; j++) {
+      const part = parts[(i * PARTPERBIKE + j) % PARTCOUNT]
+      const bikeAssembly = await new Assembly({
+        part,
+        vehicle: bike
+      }).save()
+      bikeAssemblies.push(bikeAssembly)
+      const carAssembly = await new Assembly({
+        part,
+        vehicle: car
+      }).save()
+      carAssemblies.push(carAssembly)
+    }
+  }
+}
 
 describe("Some shared functionality of the has reference", () => {
   before(() => {
@@ -25,60 +60,72 @@ describe("Some shared functionality of the has reference", () => {
     })
   })
 
-  describe('setup', () => {
-
+  before(() => {
+    return setupData()
   })
 
   describe('#findFor()', () => {
     it('get the associated belongsTo object', async () => {
-      // bike <- rider
-      for()
-      const bike = await new Bike().save()
-      const rider = await new Rider({
-        bike
-      }).save()
-
-      const foundBike = await Bike.findOne()
-      const bikeRider = await foundBike.rider
-
-      assert.isOk(bikeRider)
-      assert.strictEqual(bikeRider._id.toString(), rider._id.toString())
+      const part = await Part.findOne({ _id: parts[0]._id })
+      const assemblies = await part.assemblies
+      assert.isOk(assemblies)
+      assert.strictEqual(assemblies.length, PARTPERBIKE * 2)
     })
 
     it('get the associated polymorphic object', async () => {
-      // car <- rating
-      const car = await new Car().save()
-      const rating = await new Rating({
-        vehicle: car
-      }).save()
-
-      const foundCar = await Car.findOne()
-      const carRating = await foundCar.rating
-
-      assert.isOk(carRating)
-      assert.strictEqual(carRating._id.toString(), rating._id.toString())
+      const bike = await Bike.findOne({ _id: ObjectIds[0] })
+      const assemblies = await bike.assemblies
+      assert.isOk(assemblies)
+      assert.strictEqual(assemblies.length, PARTPERBIKE)
     })
 
-    it('get the associated object through a polymorphic relationship', async () => {
-      // rating => bike <- rider
-      const bike = await Bike.findOne()
-      const rating = await new Rating({
-        vehicle: bike
-      }).save()
-
-      const rider = await rating.rider
-      assert.isOk(rider)
-      assert.strictEqual(rider.constructor.modelName, 'Rider')
+    it('get the associated object through', async () => {
+      const part = await Part.findOne({ _id: parts[0]._id })
+      const bikes = await part.bikes
+      assert.isOk(bikes)
+      assert.strictEqual(bikes.length, PARTPERBIKE)
     })
 
-    it('get the associated object through a polymorphic relationship', async () => {
-      // rider -> bike <= rating
-      const bike = await Bike.findOne()
-      const rating = await bike.rating
-      const rider = await bike.rider
-      const riderRating = await rider.rating
-      assert.isOk(riderRating)
-      assert.strictEqual(riderRating.constructor.modelName, 'Rating')
+    it('get the associated object through', async () => {
+      const bike = await Bike.findOne({ _id: bikes[0]._id })
+      const parts = await bike.components
+      assert.isOk(parts)
+      assert.strictEqual(parts.length, PARTPERBIKE)
+    })
+  })
+
+  describe("findManyFor()", () => {
+    it('get the associated hasOne through aggregation', async () => {
+      const hasMany = Bike.associate('components')
+      const aggregate = hasMany.aggregate({ documents: bikes })
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT)
+    })
+  })
+
+  describe("#aggregate()", () => {
+    it('get the associated belongsTo using aggregation', async () => {
+      const hasMany = Part.associate('assemblies')
+      const aggregate = hasMany.aggregate()
+      const results = await aggregate
+      assert.strictEqual(results.length, PARTCOUNT)
+      assert.strictEqual(results[0].assemblies.length, PARTPERBIKE * 2)
+    })
+
+    it('get the associated polymorphic using aggregation', async () => {
+      const hasMany = Bike.associate('assemblies')
+      const aggregate = hasMany.aggregate()
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT)
+      assert.strictEqual(results[0].assemblies.length, PARTPERBIKE)
+    })
+
+    it('get the associated through using aggregation', async () => {
+      const hasMany = Bike.associate('components')
+      const aggregate = hasMany.aggregate()
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT)
+      assert.strictEqual(results[0].components.length, PARTPERBIKE)
     })
   })
 })
