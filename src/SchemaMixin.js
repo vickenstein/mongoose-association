@@ -34,14 +34,20 @@ module.exports = class SchemaMixin {
   }
 
   defineBelongsToVirtual(association) {
-    const { as, localField } = association
+    const { as, $as, localField } = association
     this.virtual(as).get(async function() {
-      const reference = this._doc[localField] // using native mongoose localField populate design for belongsTo
-      if (!reference) return null
-      if (reference.constructor.name !== 'ObjectID') return reference
-      this[localField] = await association.findFor(this)
-      return this._doc[localField] // fetched again from _doc in case of dereferencing
+      if (!this[$as]) {
+        const reference = this._doc[localField] // using native mongoose localField populate design for belongsTo
+        if (!reference) return null
+        if (reference.constructor instanceof association.foreignModel) {
+          this[$as] = reference
+        } else {
+          this[$as] = association.findFor(this)
+        }
+      }
+      return this[$as]
     }).set(function(value) {
+      if (value instanceof association.foreignModel) this[$as] = value
       this[localField] = value
     })
   }

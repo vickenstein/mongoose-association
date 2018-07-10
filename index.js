@@ -33,37 +33,44 @@ const patchQueryPrototype = (Query) => {
   Query.prototype.exec = function(options, callback) {
     if (!this._populateAssociation) return _exec.call(this, options, callback)
 
-    const fields = new Fields(...this._populateAssociation)
+    const fields = (this._populateAssociation[0] && this._populateAssociation[0] instanceof Fields) ?
+      this._populateAssociation[0] :
+      new Fields(...this._populateAssociation)
 
     return new Promise((resolve, reject) => {
       if (fields.root.length > 1 && _.includes(POPULATABLE_QUERY, this.op)) {
-        const aggregate = Populator.aggregateFromQuery(this)
+        const aggregate = Populator.aggregateFromQuery(this, fields)
         aggregate.then(documents => resolve(documents)).catch(error => {
           return reject(error), callback(error)
         })
+      } else {
+        _exec.call(this, options, (error, documents) => {
+          if (error) return reject(error), callback(error)
+          if (!documents) return resolve(documents), callback(null, documents)
+          resolve(Populator.populate(this.model, documents, fields))
+        })
       }
-
-      _exec.call(this, options, (error, documents) => {
-        if (error) return reject(error), callback(error)
-        if (!documents) return resolve(documents), callback(null, documents)
-        resolve(Populator.populate(this.model, documents, fields))
-      })
     })
   }
 }
 
-const patchAggregatePrototype =(Aggregate) => {
+const patchAggregatePrototype = (Aggregate) => {
   const _exec = Aggregate.prototype.exec
 
   if (Aggregate.prototype.hydrateAssociation) return
 
-  Aggregate.prototype.populateAssociation = function(...fields) {
-    this._populateAssociation = fields
+  Aggregate.prototype.populateAssociation = function(options) {
+    this._populateAssociation = _.merge(this._populateAssociation || {}, options)
     return this
   }
 
   Aggregate.prototype.hydrateAssociation = function(options) {
-    this._hydrateAssociation = options
+    if (options.reset) {
+      delete options.reset
+      this._hydrateAssociation = options
+    } else {
+      this._hydrateAssociation = _.merge(this._hydrateAssociation || {}, options)
+    }
     return this
   }
 
@@ -93,9 +100,15 @@ const patchAggregatePrototype =(Aggregate) => {
           documents = documents.map(document => document[mapAssociation])
         }
         if (hydrateAssociation) documents = Hydrator.hydrate(documents, hydrateAssociation)
-        if (populateAssociation) documents = Populator.populate(this.foreignModel || this.model, documents, ...fields)
-        if (singular) documents = documents[0]
-        resolve(documents)
+        if (populateAssociation) {
+          Populator.populateAggregate(this.model, documents, populateAssociation).then(documents => {
+            if (singular) documents = documents[0]
+            resolve(documents)
+          })
+        } else {
+          if (singular) documents = documents[0]
+          resolve(documents)
+        }
       })
     })
   }

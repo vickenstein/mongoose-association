@@ -66,6 +66,13 @@ module.exports = class Polymorphic extends Association {
       }],
       as: this.as
     })
+
+
+    if (options.hydrate !== false) {
+      const hydrateOptions = { model: this.model }
+      hydrateOptions[this.as] = { model: foreignModel }
+      aggregate.hydrateAssociation(hydrateOptions)
+    }
   }
 
   aggregate(options = {}) {

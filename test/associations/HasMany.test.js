@@ -109,7 +109,10 @@ describe("Some shared functionality of the has reference", () => {
       const aggregate = hasMany.aggregate()
       const results = await aggregate
       assert.strictEqual(results.length, PARTCOUNT)
-      assert.strictEqual(results[0].assemblies.length, PARTPERBIKE * 2)
+      const mongooseRequestCount = mongoose.requestCount
+      const assemblies = await results[0].assemblies
+      assert.strictEqual(assemblies.length, PARTPERBIKE * 2)
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
 
     it('get the associated polymorphic using aggregation', async () => {
@@ -117,7 +120,10 @@ describe("Some shared functionality of the has reference", () => {
       const aggregate = hasMany.aggregate()
       const results = await aggregate
       assert.strictEqual(results.length, BIKECOUNT)
-      assert.strictEqual(results[0].assemblies.length, PARTPERBIKE)
+      const mongooseRequestCount = mongoose.requestCount
+      const assemblies = await results[0].assemblies
+      assert.strictEqual(assemblies.length, PARTPERBIKE)
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
 
     it('get the associated through using aggregation', async () => {
@@ -125,7 +131,10 @@ describe("Some shared functionality of the has reference", () => {
       const aggregate = hasMany.aggregate()
       const results = await aggregate
       assert.strictEqual(results.length, BIKECOUNT)
-      assert.strictEqual(results[0].components.length, PARTPERBIKE)
+      const mongooseRequestCount = mongoose.requestCount
+      const components = await results[0].components
+      assert.strictEqual(components.length, PARTPERBIKE)
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
   })
 })

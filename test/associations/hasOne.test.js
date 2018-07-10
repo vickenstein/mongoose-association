@@ -137,7 +137,10 @@ describe("Some shared functionality of the has reference", () => {
       const aggregate = hasOne.aggregate({ documents: riders[0] })
       const results = await aggregate
       assert.strictEqual(results.length, 1)
-      assert.isOk(results[0].rating._id.toString(), ratings[0]._id.toString())
+      const mongooseRequestCount = mongoose.requestCount
+      const rating = await results[0].rating
+      assert.isOk(rating._id.toString(), ratings[0]._id.toString())
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
   })
 })

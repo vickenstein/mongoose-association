@@ -133,7 +133,7 @@ module.exports = class Association {
     return this.aggregateTo(aggregate, options)
   }
 
-  aggregateTo(aggregate, options) {
+  aggregateTo(aggregate, options = {}) {
     this.aggregateLookUp(aggregate, options)
     if (this.associationType !== 'hasMany' && !this.through) aggregate.unwind(this.$as)
     return aggregate
@@ -156,5 +156,11 @@ module.exports = class Association {
       }],
       as: this.as
     })
+
+    if (options.hydrate !== false) {
+      const hydrateOptions = { model: this.model }
+      hydrateOptions[this.as] = { model: this.foreignModel }
+      aggregate.hydrateAssociation(hydrateOptions)
+    }
   }
 }

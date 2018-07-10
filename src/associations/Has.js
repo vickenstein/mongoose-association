@@ -92,7 +92,7 @@ module.exports = class Has extends Association {
         if (this.withAssociation.associationType === 'polymorphic') $match[this.withAssociation.typeField] = document.constructor.modelName
         $match[this.withAssociation.localField] = document._id
       }
-      const aggregate = this.throughAsAssociation.aggregate({ $match, as: this.foreignModelName }).mapAssociation(this.throughAs).hydrateAssociation(this.foreignModel)
+      const aggregate = this.throughAsAssociation.aggregate({ $match, as: this.foreignModelName }).mapAssociation(this.throughAs).hydrateAssociation({ model: this.foreignModel, reset: true })
       if (this.associationType === 'hasOne') aggregate.singular()
       return aggregate
     } else {
@@ -135,7 +135,7 @@ module.exports = class Has extends Association {
 
       return this.throughAsAssociation.aggregate({
         $match, as: this.foreignModelName
-      }).mapAssociation(this.throughAs).hydrateAssociation(this.foreignModel)
+      }).mapAssociation(this.throughAs).hydrateAssociation({ model: this.foreignModel, reset: true })
     } else {
 
       const { modelName, associationType, localField } = this.withAssociation
@@ -162,9 +162,7 @@ module.exports = class Has extends Association {
     let $match = {}
     if (through) {
       $match = {
-        $expr: { $eq: ['$$localField', this.withAssociation.isReference ?
-                                       this.withAssociation.withAssociation.$foreignField :
-                                       this.withAssociation.$localField] }
+        $expr: { $eq: ['$$localField', this.throughAsAssociation.$foreignField] }
       }
     } else {
       $match = super.aggregateLookUpMatch(options)
@@ -211,11 +209,19 @@ module.exports = class Has extends Association {
         $group[this.as] = {
           $push: this.$throughAs
         }
+        $group[this.throughWith] = {
+          $push: this.throughWithAsAssociation.$as
+        }
         aggregate.group($group)
+      }
+      if (options.hydrate !== false) {
+        const hydrateOptions = { model: this.model }
+        hydrateOptions[this.as] = { model: this.foreignModel }
+        hydrateOptions[this.throughWithAsAssociation.as] = { model: this.throughModel }
+        aggregate.hydrateAssociation(hydrateOptions)
       }
     } else {
       super.aggregateLookUp(aggregate, options)
     }
-    const $match = this.aggregateLookUpMatch(options)
   }
 }

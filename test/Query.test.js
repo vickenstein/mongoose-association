@@ -52,8 +52,24 @@ describe("mongose standard queries, find, findOne with population", () => {
 
   describe('#findOne()', () => {
     it('get the associated belongsTo object', async () => {
-      const results = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike')
-      console.log(results)
+      const result = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike')
+      assert.strictEqual(result.constructor, Rider)
+      let mongooseRequestCount = mongoose.requestCount
+      const helmet = await result.helmet
+      const bike = await result.bike
+      assert.strictEqual(helmet.constructor, Helmet)
+      assert.strictEqual(bike.constructor, Bike)
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
+
+    it('get the associated belongsTo object with nested population', async () => {
+      const result = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike.rating')
+      assert.strictEqual(result.constructor, Rider)
+      let mongooseRequestCount = mongoose.requestCount
+      const bike = await result.bike
+      const rating = await bike.rating
+      assert.strictEqual(rating.constructor, Rating)
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
   })
 })
