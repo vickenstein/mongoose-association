@@ -30,30 +30,31 @@ registrationSchema.belongsTo('Alien', {
 
 const alienSchema = new Schema()
 alienSchema.hasMany('Registration', {
-  as: 'owner'
+  as: 'ownedRegistration',
+  with: 'owner'
 })
 
 alienSchema.hasMany('Registration', {
   as: 'approvedRegistrations',
-  foreignField: 'approver_id'
+  with: 'approver'
 })
 
 alienSchema.hasMany('Car', {
   through: 'Registration',
-  throughAs: 'owner'
+  with: 'owner'
 })
 
 alienSchema.hasMany('Car', {
   through: 'Registration',
-  throughAs: 'approver',
+  with: 'approver',
   as: 'approvedCars'
 })
 
 const carSchema = new Schema()
-carSchema.hasMany('Registration')
-carSchema.hasMany('Alien', {
+carSchema.hasOne('Registration')
+carSchema.hasOne('Alien', {
   through: 'Registration',
-  throughBy: 'owner'
+  throughAs: 'owner'
 })
 
 const assemblySchema = new Schema()
@@ -114,7 +115,7 @@ riderSchema.hasOne('Rating', {
 alienSchema.hasOne('Rating')
 alienSchema.hasOne('Car', {
   through: 'Rating',
-  throughBy: 'vehicle',
+  throughAs: 'vehicle',
   as: 'ratedCar'
 })
 
