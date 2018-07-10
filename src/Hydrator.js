@@ -8,6 +8,7 @@ module.exports = class Hydrator {
     const hydratedDocuments = documents.map(document => {
       return model.hydrate(document)
     })
+
     nestedFields.forEach(field => {
       const model = hydrateOptions[field].model
       const $field = `$${field}`

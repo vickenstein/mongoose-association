@@ -95,11 +95,12 @@ describe("Some shared functionality of the has reference", () => {
   })
 
   describe("findManyFor()", () => {
-    it('get the associated hasOne through aggregation', async () => {
+    it ('get the associate hasMany through and invert result', async () => {
       const hasMany = Bike.associate('components')
-      const aggregate = hasMany.aggregate({ documents: bikes })
+      const aggregate = hasMany.findManyFor(bikes)
       const results = await aggregate
-      assert.strictEqual(results.length, BIKECOUNT)
+      assert.strictEqual(results.length, BIKECOUNT * PARTPERBIKE)
+      assert.strictEqual(results[0].constructor, Part)
     })
   })
 
@@ -135,6 +136,14 @@ describe("Some shared functionality of the has reference", () => {
       const components = await results[0].components
       assert.strictEqual(components.length, PARTPERBIKE)
       assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
+
+    it('get the associated hasOne through aggregation', async () => {
+      const hasMany = Bike.associate('components')
+      const aggregate = hasMany.aggregate({ documents: bikes })
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT)
+      assert.strictEqual(results[0].constructor, Bike)
     })
   })
 })

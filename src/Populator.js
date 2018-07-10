@@ -18,6 +18,7 @@ module.exports = class Populator {
   }
 
   static async populate(model, documents, ...populateFields) {
+    if (!(documents instanceof Array)) documents = [documents]
     const fields = (populateFields[0] && populateFields[0] instanceof Fields) ?
       populateFields[0] :
       new Fields(...populateFields)
@@ -36,9 +37,11 @@ module.exports = class Populator {
   static async populateField(model, documents, field, childrenFields) {
     const $field = `$${field}`
     const association = model.associate(field)
-    const results = await association.findManyFor(documents).populateAssociation(childrenFields)
-    const { localField, foreignField } = association
-    const indexedResults = _.keyBy(results, foreignField)
+    const results = await association.findFor(documents).populateAssociation(childrenFields)
+    const enumerateMethod = association.associationType === 'hasMany' ? 'groupBy' : 'keyBy'
+    let { localField, foreignField } = association
+    if (association.through) foreignField = document => document[association.throughAsAssociation.$with][association.foreignField]
+    const indexedResults = _[enumerateMethod](results, foreignField)
     documents.forEach(document => {
       document[$field] = indexedResults[document[localField]]
     })
@@ -46,12 +49,17 @@ module.exports = class Populator {
   }
 
   static async populateAggregate(model, documents, populateOptions) {
-    const populateFields = Object.keys(populateOptions)
-    for(let i = 0; i < populateFields.length; i++) {
-      const field = populateFields[i]
-      const $field = `$${field}`
-      const nestedDocuments = _.compact(_.flatten(documents.map(document => document[$field])))
-      await this.populate(nestedDocuments[0].constructor, nestedDocuments, populateOptions[field])
+    if (populateOptions instanceof Fields) {
+      await this.populate(documents[0].constructor, documents, populateOptions)
+      return documents
+    } else {
+      const populateFields = Object.keys(populateOptions)
+      for(let i = 0; i < populateFields.length; i++) {
+        const field = populateFields[i]
+        const $field = `$${field}`
+        const nestedDocuments = _.compact(_.flatten(documents.map(document => document[$field])))
+        await this.populate(nestedDocuments[0].constructor, nestedDocuments, populateOptions[field])
+      }
     }
     return documents
   }

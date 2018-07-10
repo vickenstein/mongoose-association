@@ -9,8 +9,12 @@ const Helmet = mongoose.model('Helmet')
 const Bike = mongoose.model('Bike')
 const Car = mongoose.model('Car')
 const Rating = mongoose.model('Rating')
+const Part = mongoose.model('Part')
+const Assembly = mongoose.model('Assembly')
 
 const BIKECOUNT = 5
+const PARTCOUNT = 5
+const PARTPERBIKE = 2
 const ObjectIds = []
 for(let i = 0; i < BIKECOUNT; i++) {
   ObjectIds.push(ObjectId())
@@ -21,8 +25,15 @@ const ratings = []
 const carRatings = []
 const riders = []
 const helmets = []
+const parts = []
+const bikeAssemblies = []
+const carAssemblies = []
 
 async function setupData() {
+  for(let i = 0; i < PARTCOUNT; i++) {
+    const part = await new Part().save()
+    parts.push(part)
+  }
   for(let i = 0; i < BIKECOUNT; i++) {
     const bike = await new Bike({ _id: ObjectIds[i] }).save()
     bikes.push(bike)
@@ -36,6 +47,19 @@ async function setupData() {
     ratings.push(rating)
     const carRating = await new Rating({ vehicle: cars[i] }).save()
     carRatings.push(carRating)
+    for(let j = 0; j < PARTPERBIKE; j++) {
+      const part = parts[(i * PARTPERBIKE + j) % PARTCOUNT]
+      const bikeAssembly = await new Assembly({
+        part,
+        vehicle: bike
+      }).save()
+      bikeAssemblies.push(bikeAssembly)
+      const carAssembly = await new Assembly({
+        part,
+        vehicle: car
+      }).save()
+      carAssemblies.push(carAssembly)
+    }
   }
 }
 
@@ -62,13 +86,60 @@ describe("mongose standard queries, find, findOne with population", () => {
       assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
 
-    it('get the associated belongsTo object with nested population', async () => {
+    it('get the associated belongsTo, and hasOne object with nested population', async () => {
       const result = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike.rating')
       assert.strictEqual(result.constructor, Rider)
       let mongooseRequestCount = mongoose.requestCount
       const bike = await result.bike
       const rating = await bike.rating
       assert.strictEqual(rating.constructor, Rating)
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
+
+    it('get the associated belongsTo, and hasMany object with nested population', async () => {
+      const result = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike.assemblies')
+      assert.strictEqual(result.constructor, Rider)
+      let mongooseRequestCount = mongoose.requestCount
+      const bike = await result.bike
+      const assemblies = await bike.assemblies
+      assert.strictEqual(assemblies[0].constructor, Assembly)
+      assert.strictEqual(assemblies.length, PARTPERBIKE)
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
+
+    it('get the associated belongsTo, and hasOne through hasMany object with nested population', async () => {
+      const result = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike.assemblies.part')
+      assert.strictEqual(result.constructor, Rider)
+      let mongooseRequestCount = mongoose.requestCount
+      const bike = await result.bike
+      const assemblies = await bike.assemblies
+      const part = await assemblies[0].part
+      assert.strictEqual(part.constructor, Part)
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
+
+    it('get the associated belongsTo, and hasMany through object with nested population', async () => {
+      const result = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike.components')
+      assert.strictEqual(result.constructor, Rider)
+      let mongooseRequestCount = mongoose.requestCount
+      const bike = await result.bike
+      const components = await bike.components
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
+
+    it('get the associated hasMany through with an single association population', async () => {
+      const result = await Part.findOne({ _id: parts[0]._id }).populateAssociation('bikes')
+      assert.strictEqual(result.constructor, Part)
+      let mongooseRequestCount = mongoose.requestCount
+      const bikes = await result.bikes
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
+    it('get the associated hasMany through with an single association population', async () => {
+      const result = await Part.findOne({ _id: parts[0]._id }).populateAssociation('bikes.rider.helmet')
+      assert.strictEqual(result.constructor, Part)
+      let mongooseRequestCount = mongoose.requestCount
+      const bikes = await result.bikes
+      const rider = await bikes[0].rider
       assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
   })

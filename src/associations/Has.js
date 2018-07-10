@@ -92,7 +92,11 @@ module.exports = class Has extends Association {
         if (this.withAssociation.associationType === 'polymorphic') $match[this.withAssociation.typeField] = document.constructor.modelName
         $match[this.withAssociation.localField] = document._id
       }
-      const aggregate = this.throughAsAssociation.aggregate({ $match, as: this.foreignModelName }).mapAssociation(this.throughAs).hydrateAssociation({ model: this.foreignModel, reset: true })
+
+      const hydrateOptions = { model: this.foreignModel, reset: true }
+      hydrateOptions[this.throughAsAssociation.with] = { model: this.throughModel }
+
+      const aggregate = this.throughAsAssociation.aggregate({ $match, as: this.foreignModelName }).invertAssociation(this.throughAsAssociation.with, this.throughAs).hydrateAssociation(hydrateOptions)
       if (this.associationType === 'hasOne') aggregate.singular()
       return aggregate
     } else {
@@ -127,15 +131,18 @@ module.exports = class Has extends Association {
           $in: documents.map(document => document[this.throughWithAsAssociation.localField])
         }
       } else {
-        if (this.withAssociation.associationType === 'polymorphic') $match[this.withAssociation.typeField] = document.constructor.modelName
+        if (this.withAssociation.associationType === 'polymorphic') $match[this.withAssociation.typeField] = documents[0].constructor.modelName
         $match[this.withAssociation.localField] = {
           $in: documents.map(document => document._id)
         }
       }
 
+      const hydrateOptions = { model: this.foreignModel, reset: true }
+      hydrateOptions[this.throughAsAssociation.with] = { model: this.throughModel }
+
       return this.throughAsAssociation.aggregate({
         $match, as: this.foreignModelName
-      }).mapAssociation(this.throughAs).hydrateAssociation({ model: this.foreignModel, reset: true })
+      }).invertAssociation(this.throughAsAssociation.with, this.throughAs).hydrateAssociation(hydrateOptions)
     } else {
 
       const { modelName, associationType, localField } = this.withAssociation

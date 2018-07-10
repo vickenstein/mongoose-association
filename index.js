@@ -12,11 +12,11 @@ const plugin = (Schema, options = {}) => {
   }
 
   Schema.methods.populateAssociation = function(...fields) {
-    return Populator.populate(this.constructor, this, paths)
+    return Populator.populate(this.constructor, this, fields)
   }
 
   Schema.statics.populateAssociation = function(documents, ...fields) {
-    return Populator.populate(this, documents, paths)
+    return Populator.populate(this, documents, fields)
   }
 }
 
@@ -47,7 +47,9 @@ const patchQueryPrototype = (Query) => {
         _exec.call(this, options, (error, documents) => {
           if (error) return reject(error), callback(error)
           if (!documents) return resolve(documents), callback(null, documents)
-          resolve(Populator.populate(this.model, documents, fields))
+          Populator.populate(this.model, documents, fields).then(result => resolve(documents)).catch(error => {
+            return reject(error), callback(error)
+          })
         })
       }
     })
@@ -60,7 +62,11 @@ const patchAggregatePrototype = (Aggregate) => {
   if (Aggregate.prototype.hydrateAssociation) return
 
   Aggregate.prototype.populateAssociation = function(options) {
-    this._populateAssociation = _.merge(this._populateAssociation || {}, options)
+    if (options instanceof Fields) {
+      this._populateAssociation = options
+    } else {
+      this._populateAssociation = _.merge(this._populateAssociation || {}, options)
+    }
     return this
   }
 
@@ -74,8 +80,13 @@ const patchAggregatePrototype = (Aggregate) => {
     return this
   }
 
-  Aggregate.prototype.mapAssociation = function(field) {
-    this._mapAssociation = field
+  Aggregate.prototype.invertAssociation = function(from, to) {
+    if (from, to) {
+      this._invertAssociation = {
+        from,
+        to
+      }
+    }
     return this
   }
 
@@ -87,21 +98,26 @@ const patchAggregatePrototype = (Aggregate) => {
   Aggregate.prototype.exec = function(callback) {
     const populateAssociation = this._populateAssociation
     const hydrateAssociation = this._hydrateAssociation
-    const mapAssociation = this._mapAssociation
+    const invertAssociation = this._invertAssociation
     const singular = this._singular
 
-    if (!hydrateAssociation && !mapAssociation && !singular) return _exec.call(this, callback)
+    if (!populateAssociation && !hydrateAssociation && !invertAssociation && !singular) return _exec.call(this, callback)
 
     return new Promise((resolve, reject) => {
       _exec.call(this, (error, documents) => {
         if (error) return reject(error), callback(error)
         if (!documents) return resolve(documents), callback(null, documents)
-        if (mapAssociation) {
-          documents = documents.map(document => document[mapAssociation])
+        if (invertAssociation) {
+          documents = documents.map(document => {
+            const nestedDcoument = document[invertAssociation.to]
+            delete document[invertAssociation.to]
+            nestedDcoument[invertAssociation.from] = document
+            return nestedDcoument
+          })
         }
         if (hydrateAssociation) documents = Hydrator.hydrate(documents, hydrateAssociation)
         if (populateAssociation) {
-          Populator.populateAggregate(this.model, documents, populateAssociation).then(documents => {
+          Populator.populateAggregate(this._model, documents, populateAssociation).then(documents => {
             if (singular) documents = documents[0]
             resolve(documents)
           })
