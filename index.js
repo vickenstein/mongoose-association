@@ -3,6 +3,7 @@ const SchemaMixin = require('./src/SchemaMixin')
 const Populator = require('./src/Populator')
 const Hydrator = require('./src/Hydrator')
 const Fields = require('./src/Fields')
+const inflection = require('inflection')
 
 const POPULATABLE_QUERY = ['find', 'findOne']
 
@@ -17,6 +18,21 @@ const plugin = (Schema, options = {}) => {
 
   Schema.statics.populateAssociation = function(documents, ...fields) {
     return Populator.populate(this, documents, fields)
+  }
+
+  Schema.methods.fetch = function(association) {
+    const methodName = association instanceof Object ? association.$fetch : `fetch${inflection.capitalize(association)}`
+    return this[methodName]()
+  }
+
+  Schema.methods.unset = function(association) {
+    if (association) {
+      const methodName = association instanceof Object ? association.$unset : `unset${inflection.capitalize(association)}`
+      this[methodName]()
+    } else {
+      this.constructor.schema.associations.forEach(association => this.unset(association))
+    }
+    return this
   }
 }
 

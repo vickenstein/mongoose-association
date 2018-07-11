@@ -50,4 +50,8 @@ module.exports = class Associations {
   index(association) {
     return this.asIndexed[association.as] = association
   }
+
+  forEach(func) {
+    Object.keys(this.asIndexed).forEach(as => func(this.associate(as)))
+  }
 }

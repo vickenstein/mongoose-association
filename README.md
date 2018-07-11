@@ -43,10 +43,10 @@ specifies the reference between the through model and association origin model.
 
 ### Associations
 `mongoose-association` has 4 types of association to relation mongoose schemas.
-* `belongsTo`
-* `polymorphic`
-* `hasOne` `through`
-* `hasMany` `through`
+* `belongsTo` o ->
+* `polymorphic` o =>
+* `hasOne` `through` -> o
+* `hasMany` `through` ->> o
 
 #### `belongsTo`
 this relation specify the reference lies directly on the schema and related to a **single** model using a `foreignField`
@@ -264,3 +264,72 @@ const Part = mongoose.model('Part', partSchema)
 const Rating = mongoose.model('Rating', ratingSchema)
 const Settings = mongoose.model('Settings', settingsSchema)
 ```
+
+## Persisting Relationship
+creating records with relationship
+```javascript
+const bike = await new Bike().save()
+const helmet = await new Helment().save()
+const rider = await new Rider({
+  bike,
+  helmet
+}).save()
+```
+updating relationship on record
+```javascript
+const anotherBike = await new Bike().save()
+rider.bike = anotherBike
+await rider.save()
+```
+working with polymorphic relationship
+```javascript
+const bike = await new Bike().save()
+const rating = await new Rating({
+  vehicle: bike
+}).save()
+const car = await new Car().save()
+rating.vehicle = car
+rating.save()
+```
+## Populating Association
+from the object itself
+```javascript
+const rider = await Rider.findOne() // request count 1
+rider.populateAssociation('bike.rating', 'helmet') // request count 4
+const bike = await rider.bike // request count 4
+const helmet = await rider.helmet // request count 4
+const rating = await bike.rating // request count 4
+```
+from the model
+```javascript
+const rider = await Rider.findOne() // request count 1
+Rider.populateAssociation(bike, 'bike.rating', 'helmet') // request count 4
+const bike = await rider.bike // request count 4
+const helmet = await rider.helmet // request count 4
+const rating = await bike.rating // request count 4
+```
+from the query is slightly more efficient allows for further optimization
+```javascript
+const rider = await Rider.findOne().populateAssociation('bike.rating', 'helmet') // request count 2
+const bike = await rider.bike // request count 2
+const helmet = await rider.helmet // request count 2
+const rating = await bike.rating // request count 2
+```
+## Fetching From New Query Instead of Cache
+```javascript
+const rider = await Rider.findOne().populateAssociation('bike.rating', 'helmet') // request count 2
+const bike = await rider.fetchBike() // request count 3
+const sameBike = await rider.fetchBike().populateAssociation('rating') // request count 4
+const rating = await sameBike.rating // request count 4
+```
+unsetting association cache
+```javascript
+const rider = await Rider.findOne().populateAssociation('bike.rating', 'helmet') // request count 2
+const bike = await rider.unsetBike().bike // request count 3
+```
+helper methods to do more meta programming
+```javascript
+const rider = await Rider.findOne().populateAssociation('bike.rating', 'helmet') // request count 2
+const bike = await rider.fetch('bike') // request count 3
+const sameBike = await rider.unset('bike').bike // request count 4
+const anotherSameBike = await rider.unset().bike // request count 5

@@ -1,6 +1,7 @@
 const _ = require('lodash')
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Types.ObjectId
+const inflection = require('inflection')
 
 const OPTIONS = {
   foreignModelName: 'name of the model this belongsTo',
@@ -26,6 +27,7 @@ module.exports = class Association {
     if (!schema) throw 'missing schema for association'
     this.options = options
     this.schema = schema
+    return this
   }
 
   static get options () {
@@ -88,6 +90,14 @@ module.exports = class Association {
 
   get as() {
     return this.define('as', Association.decapitalize(this.foreignModelName))
+  }
+
+  get $fetch() {
+    return this.define('$fetch', `fetch${inflection.capitalize(this.as)}`)
+  }
+
+  get $unset() {
+    return this.define('$unset', `unset${inflection.capitalize(this.as)}`)
   }
 
   get $as() {
