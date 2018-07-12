@@ -4,6 +4,7 @@ const Populator = require('./src/Populator')
 const Hydrator = require('./src/Hydrator')
 const Fields = require('./src/Fields')
 const inflection = require('inflection')
+const util = require('util')
 
 const POPULATABLE_QUERY = ['find', 'findOne']
 
@@ -33,6 +34,23 @@ const plugin = (Schema, options = {}) => {
       this.constructor.schema.associations.forEach(association => this.unset(association))
     }
     return this
+  }
+
+  Schema.statics._explain = function() {
+    const associations = {
+      _id: `${this.modelName}._id`,
+      modelName: this.modelName
+    }
+    this.schema.associations.forEach(association => {
+      if (!association.isReference) {
+        associations[association.localField] = `${this.modelName}.${association.localField}`
+      }
+    })
+    return associations
+  }
+
+  Schema.statics.explain = function() {
+    console.log(util.inspect(this._explain(), { depth: 20 }))
   }
 }
 
@@ -70,6 +88,25 @@ const patchQueryPrototype = (Query) => {
       }
     })
   }
+
+  Query.prototype._explain = function() {
+    if (!this._populateAssociation) return [['query', this.model.modelName, this._conditions]]
+
+    const fields = (this._populateAssociation[0] && this._populateAssociation[0] instanceof Fields) ?
+      this._populateAssociation[0] :
+      new Fields(...this._populateAssociation)
+
+    if (fields.root.length > 1 && _.includes(POPULATABLE_QUERY, this.op)) {
+      return Populator.aggregateFromQuery(this, fields)._explain()
+    } else {
+      const explain = [['query', this.model.modelName, this._conditions]].concat(Populator.explainPopulate(this.model, this.model._explain(), fields))
+      return explain
+    }
+  }
+
+  Query.prototype.explain = function() {
+    console.log(util.inspect(this._explain(), { depth: 20 }))
+  }
 }
 
 const patchAggregatePrototype = (Aggregate) => {
@@ -77,11 +114,17 @@ const patchAggregatePrototype = (Aggregate) => {
 
   if (Aggregate.prototype.hydrateAssociation) return
 
-  Aggregate.prototype.populateAssociation = function(options) {
-    if (options instanceof Fields) {
-      this._populateAssociation = options
+  Aggregate.prototype.populateAssociation = function(...options) {
+    if (options.length > 1 || !(options[0] instanceof Object)) {
+      this._populateAssociation = _.merge(this._populateAssociation || {}, {
+        _fields: new Fields(...options)
+      })
+    } else if (options[0] instanceof Fields) {
+      this._populateAssociation = _.merge(this._populateAssociation || {}, {
+        _fields: options[0]
+      })
     } else {
-      this._populateAssociation = _.merge(this._populateAssociation || {}, options)
+      this._populateAssociation = _.merge(this._populateAssociation || {}, options[0])
     }
     return this
   }
@@ -143,6 +186,17 @@ const patchAggregatePrototype = (Aggregate) => {
         }
       })
     })
+  }
+
+  Aggregate.prototype._explain = function() {
+    const populateAssociation = this._populateAssociation
+    let explain = [['aggregate', this._model.modelName, this._pipeline]]
+    if (!populateAssociation) return explain
+    return explain.concat(Populator.explainPopulateAggregate(this._model, [this._model._explain()], populateAssociation))
+  }
+
+  Aggregate.prototype.explain = function() {
+    console.log(util.inspect(this._explain(), { depth: 20 }))
   }
 }
 

@@ -96,6 +96,19 @@ describe("Create an belongsTo association", () => {
     })
   })
 
+  describe("set belongsTo", () => {
+     it('set the belongsTo to another record', async () => {
+      const rider = await Rider.findOne({ _id: riders[0]._id })
+      rider.bike = bikes[2]
+      await rider.save()
+      const sameRider = await Rider.findOne({ _id: riders[0]._id })
+      const bike = await sameRider.bike
+      assert.strictEqual(bike._id.toString(), bikes[2]._id.toString())
+      sameRider.bike = bikes[0]
+      await sameRider.save()
+    })
+  })
+
   describe("#aggregate()", () => {
     it('get the associated belongsTo using aggregation', async () => {
       const belongsTo = Rider.associate('bike')

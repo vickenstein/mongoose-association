@@ -11,36 +11,6 @@ npm install mongoose-association
   require('mongoose-association')(mongoose)
 ```
 
-## Naming Convention
-As mongoose model classes are typically singular thus `mongoose-association` stick to naming models using singular words.
-As typically javascript utilize camel casing thus all auto generated naming is done using camel case
-
-## Glossary
-
-#### `foreignModelName`
-the modelName property for a mongoose model holding the related schema.
-
-#### `as`
-the property on mongoose model instance that holds the related object
-
-#### `with`
-for has associations, specify which as property is referenced.
-
-#### `foreignField`
-the **schema** property for the relational **reference** typically an mongoose **ObjectID**
-
-#### `localField`
-the **model** instance property that holds relational record
-
-#### `through`
-through is used to associate via another document type other than the two document types forming the relation
-
-#### `throughAs`
-specifies the reference between the through model and associated model.
-
-#### `throughWith`
-specifies the reference between the through model and association origin model.
-
 ### Associations
 `mongoose-association` has 4 types of association to relation mongoose schemas.
 * `belongsTo` o ->
@@ -103,6 +73,36 @@ hasMany(foreignModelName, { as, with, localField, foreignField, through, through
 ###### throughAs *optional*
 ###### throughWith *optional*
 
+## Naming Convention
+As mongoose model classes are typically singular thus `mongoose-association` stick to naming models using singular words.
+As typically javascript utilize camel casing thus all auto generated naming is done using camel case
+
+## Glossary
+
+#### `foreignModelName`
+the modelName property for a mongoose model holding the related schema.
+
+#### `as`
+the property on mongoose model instance that holds the related object
+
+#### `with`
+for has associations, specify which as property is referenced.
+
+#### `foreignField`
+the **schema** property for the relational **reference** typically an mongoose **ObjectID**
+
+#### `localField`
+the **model** instance property that holds relational record
+
+#### `through`
+through is used to associate via another document type other than the two document types forming the relation
+
+#### `throughAs`
+specifies the reference between the through model and associated model.
+
+#### `throughWith`
+specifies the reference between the through model and association origin model.
+
 ## Schema Building
 Once we have apply the plugin to mongoose, we can start defining some schemas
 ```javascript
@@ -138,7 +138,7 @@ registrationSchema.belongsTo('Alien', {
 })
 ```
 Lets visit another scenario that is a bit foreign, where we run an **Alien** **Car** **Registration**. There are two different ways an **Alien** can interact with a **Registration**. One is by assigning the `as` to be **owner**, which renders the `localField` to be **ownerId**. this allows the **Alien** to be the "owner" of the **Car**.
-```
+```javascript
 registrationSchema.belongsTo('Alien', {
   as: 'approver',
   localField: 'approver_id'
@@ -274,6 +274,7 @@ const rider = await new Rider({
   bike,
   helmet
 }).save()
+const bikeId = rider.bikeId // returns ObjectId
 ```
 updating relationship on record
 ```javascript
@@ -303,7 +304,7 @@ const rating = await bike.rating // request count 4
 from the model
 ```javascript
 const rider = await Rider.findOne() // request count 1
-Rider.populateAssociation(bike, 'bike.rating', 'helmet') // request count 4
+Rider.populateAssociation(rider, 'bike.rating', 'helmet') // request count 4
 const bike = await rider.bike // request count 4
 const helmet = await rider.helmet // request count 4
 const rating = await bike.rating // request count 4
@@ -333,3 +334,66 @@ const rider = await Rider.findOne().populateAssociation('bike.rating', 'helmet')
 const bike = await rider.fetch('bike') // request count 3
 const sameBike = await rider.unset('bike').bike // request count 4
 const anotherSameBike = await rider.unset().bike // request count 5
+```
+## Explaining Query/Aggregate Population Plan
+All mongoose Queries and Aggregates now have the explain method which returns the population plan it will use to optimize the fetching of associations.
+```javascript
+Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike.assemblies.part')._explain()
+[
+  [
+    'aggregate', 'Rider', [{
+      '$match': {
+        _id: 5 b47845d8222031fd88ef049
+      }
+    }, {
+      '$limit': 1
+    }, {
+      '$lookup': {
+        from: 'helmets',
+        let: {
+          localField: '$helmetId'
+        },
+        pipeline: [{
+          '$match': {
+            '$expr': {
+              '$eq': ['$$localField', '$_id']
+            }
+          }
+        }],
+        as: 'helmet'
+      }
+    },
+    {
+      '$unwind': '$helmet'
+    }, {
+      '$lookup': {
+        from: 'bikes',
+        let:
+        {
+          localField: '$bikeId'
+        },
+        pipeline: [{
+          '$match': {
+            '$expr': {
+              '$eq': ['$$localField', '$_id']
+            }
+          }
+        }],
+        as: 'bike'
+      }
+    },
+    {
+      '$unwind': '$bike'
+    }]
+  ], [
+    'query', 'Assembly', {
+      vehicleId: ['Bike._id'],
+      vehicleIdType: 'Bike'
+    }
+  ], [
+    'query', 'Part', {
+      _id: ['Assembly.partId']
+    }
+  ]
+]
+```

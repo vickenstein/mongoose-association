@@ -7,12 +7,16 @@ const drop = require('test/helpers/drop')
 const testSchema = new mongoose.Schema
 const Bike = mongoose.model('Bike')
 const Rating = mongoose.model('Rating')
+const Car = mongoose.model('Car')
 
 const BIKECOUNT = 5
 
 let ratings = []
 let bikes = []
+let car
 async function setupData() {
+
+  car = await new Car().save()
 
   const bikeAttributes = []
 
@@ -100,12 +104,25 @@ describe("Create an polymorphic association", () => {
     })
   })
 
-  describe("#findFor()", () => {
+  describe("#findManyFor()", () => {
     it('get the associated object', async () => {
       const polymorphic = Rating.associate('vehicle')
       const ratedBikes = await polymorphic.findManyFor(ratings)
       assert.isOk(ratedBikes)
       assert.strictEqual(ratedBikes.length, BIKECOUNT)
+    })
+  })
+
+  describe("set polymorphic", () => {
+     it('set the polymorphic to another record', async () => {
+      const rating = await Rating.findOne({ _id: ratings[0]._id })
+      rating.vehicle = car
+      await rating.save()
+      const sameRating = await Rating.findOne({ _id: ratings[0]._id })
+      const vehicle = await sameRating.vehicle
+      assert.strictEqual(vehicle._id.toString(), car._id.toString())
+      sameRating.vehicle = bikes[0]
+      await sameRating.save()
     })
   })
 

@@ -143,4 +143,16 @@ describe("mongose standard queries, find, findOne with population", () => {
       assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
   })
+
+  describe('#aggregate()', () => {
+    it('get the associated belongsTo through aggregation with association population', async () => {
+      const results = await Rider.associate('bike').aggregate().populateAssociation('helmet')
+      assert.strictEqual(results.length, riders.length)
+      assert.strictEqual(results[0].constructor, Rider)
+      let mongooseRequestCount = mongoose.requestCount
+      const helmet = await results[0].helmet
+      const bike = await results[0].bike
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
+  })
 })

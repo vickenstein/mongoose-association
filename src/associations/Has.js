@@ -109,7 +109,7 @@ module.exports = class Has extends Association {
           localField,
           localFieldValue: document._id,
           typeField,
-          type: document.constructor.modelName
+          type: document.constructor.modelName || document.modelName // second case for explain method
         })
       } else {
         return query({
@@ -144,7 +144,6 @@ module.exports = class Has extends Association {
         $match, as: this.foreignModelName
       }).invertAssociation(this.throughAsAssociation.with, this.throughAs).hydrateAssociation(hydrateOptions)
     } else {
-
       const { modelName, associationType, localField } = this.withAssociation
       if (associationType === 'polymorphic') {
         const { typeField } = this.withAssociation
@@ -153,7 +152,7 @@ module.exports = class Has extends Association {
           localField,
           localFieldValue: documents.map(document => document._id),
           typeField,
-          type: documents[0].constructor.modelName
+          type: documents[0].constructor.modelName || documents[0].modelName // second case for explain method
         })
       } else {
         return Has.find({

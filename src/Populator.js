@@ -19,6 +19,7 @@ module.exports = class Populator {
 
   static async populate(model, documents, ...populateFields) {
     if (!(documents instanceof Array)) documents = [documents]
+    if (populateFields[0] instanceof Array) populateFields = populateFields[0]
     const fields = (populateFields[0] && populateFields[0] instanceof Fields) ?
       populateFields[0] :
       new Fields(...populateFields)
@@ -32,6 +33,21 @@ module.exports = class Populator {
     }
 
     return documents
+  }
+
+  static explainPopulate(model, documents, ...populateFields) {
+    if (!(documents instanceof Array)) documents = [documents]
+    if (populateFields[0] instanceof Array) populateFields = populateFields[0]
+    const fields = (populateFields[0] && populateFields[0] instanceof Fields) ?
+      populateFields[0] :
+      new Fields(...populateFields)
+
+    const rootFields = fields.root
+
+    return _.flatten(rootFields.map(rootField => {
+      const childrenFields = fields.children(rootField)
+      return this.explainPopulateField(model, documents, rootField, childrenFields)
+    }))
   }
 
   static async populateField(model, documents, field, childrenFields) {
@@ -48,20 +64,44 @@ module.exports = class Populator {
     return documents
   }
 
+  static explainPopulateField(model, documents, field, childrenFields) {
+    const association = model.associate(field)
+    return association.findFor(documents).populateAssociation(childrenFields)._explain()
+  }
+
+  // static prePopulateAggregate(aggregate, fields) {
+
+  // }
+
   static async populateAggregate(model, documents, populateOptions) {
-    if (populateOptions instanceof Fields) {
-      await this.populate(documents[0].constructor, documents, populateOptions)
-      return documents
-    } else {
-      const populateFields = Object.keys(populateOptions)
-      for(let i = 0; i < populateFields.length; i++) {
-        const field = populateFields[i]
+    if (populateOptions._fields) {
+      await this.populate(documents[0].constructor, documents, populateOptions._fields)
+    }
+    const populateFields = Object.keys(populateOptions)
+    for(let i = 0; i < populateFields.length; i++) {
+      const field = populateFields[i]
+      if (field !== '_fields') {
         const $field = `$${field}`
         const nestedDocuments = _.compact(_.flatten(documents.map(document => document[$field])))
-        await this.populate(nestedDocuments[0].constructor, nestedDocuments, populateOptions[field])
+        if (nestedDocuments.length) await this.populate(nestedDocuments[0].constructor, nestedDocuments, populateOptions[field])
       }
     }
     return documents
+  }
+
+  static explainPopulateAggregate(model, documents, populateOptions) {
+    let explain = []
+    if (populateOptions._fields) {
+      explain = explain.concat(this.explainPopulate(mongoose.model(documents[0].modelName), documents, populateOptions._fields))
+    }
+    Object.keys(populateOptions).map(field => {
+      if (field !== '_fields') {
+        const association = model.associate(field)
+        const foreignModel = association.foreignModel
+        explain = explain.concat(this.explainPopulate(foreignModel, [foreignModel._explain()], populateOptions[field]))
+      }
+    })
+    return explain
   }
 
   static aggregateFromQuery(query, fields) {

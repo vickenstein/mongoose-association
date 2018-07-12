@@ -23,6 +23,7 @@ module.exports = class SchemaMixin {
       ref: foreignModelName,
       get: function() {
         const _id = this._doc[localField]
+        if (!_id) return _id
         if (_id.constructor.name !== 'ObjectID') return _id._id
         return _id
       }
