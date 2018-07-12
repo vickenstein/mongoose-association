@@ -85,9 +85,8 @@ describe("assign association class", () => {
 
     it('standard query with population', () => {
       const explain = Rider.findOne({ _id: riders[0]._id }).populateAssociation('bike')._explain()
-      assert.strictEqual(explain[1][0], 'query')
-      assert.strictEqual(explain[1][1], 'Bike')
-      assert.deepEqual(explain[1][2], { _id: [ 'Rider.bikeId' ] })
+      assert.strictEqual(explain[0][0], 'aggregate')
+      assert.strictEqual(explain[0][1], 'Rider')
     })
 
     it('standard aggregation', () => {
@@ -98,9 +97,8 @@ describe("assign association class", () => {
 
     it('standard aggregation with population on root document', () => {
       const explain = Rider.associate('bike').aggregate().populateAssociation('helmet')._explain()
-      assert.strictEqual(explain[1][0], 'query')
-      assert.strictEqual(explain[1][1], 'Helmet')
-      assert.deepEqual(explain[1][2], { _id: [ 'Rider.helmetId' ] })
+      assert.strictEqual(explain[0][0], 'aggregate')
+      assert.strictEqual(explain[0][1], 'Rider')
     })
 
     it('standard aggregation with population on nested document', () => {
@@ -114,6 +112,8 @@ describe("assign association class", () => {
 
     it('standard aggregation with population on nested document', () => {
       const explain = Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike.assemblies.part')._explain()
+      assert.strictEqual(explain[1][0], 'aggregate')
+      assert.strictEqual(explain[1][1], 'Assembly')
     })
   })
 })

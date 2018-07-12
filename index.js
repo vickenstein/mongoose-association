@@ -72,7 +72,7 @@ const patchQueryPrototype = (Query) => {
       new Fields(...this._populateAssociation)
 
     return new Promise((resolve, reject) => {
-      if (fields.root.length > 1 && _.includes(POPULATABLE_QUERY, this.op)) {
+      if (fields.root.length && _.includes(POPULATABLE_QUERY, this.op)) {
         const aggregate = Populator.aggregateFromQuery(this, fields)
         aggregate.then(documents => resolve(documents)).catch(error => {
           return reject(error), callback(error)
@@ -96,7 +96,7 @@ const patchQueryPrototype = (Query) => {
       this._populateAssociation[0] :
       new Fields(...this._populateAssociation)
 
-    if (fields.root.length > 1 && _.includes(POPULATABLE_QUERY, this.op)) {
+    if (fields.root.length && _.includes(POPULATABLE_QUERY, this.op)) {
       return Populator.aggregateFromQuery(this, fields)._explain()
     } else {
       const explain = [['query', this.model.modelName, this._conditions]].concat(Populator.explainPopulate(this.model, this.model._explain(), fields))
@@ -162,6 +162,10 @@ const patchAggregatePrototype = (Aggregate) => {
 
     if (!populateAssociation && !hydrateAssociation && !invertAssociation && !singular) return _exec.call(this, callback)
 
+    if (populateAssociation && populateAssociation._fields) {
+      Populator.prePopulateAggregate(this, populateAssociation._fields)
+    }
+
     return new Promise((resolve, reject) => {
       _exec.call(this, (error, documents) => {
         if (error) return reject(error), callback(error)
@@ -192,6 +196,10 @@ const patchAggregatePrototype = (Aggregate) => {
     const populateAssociation = this._populateAssociation
     let explain = [['aggregate', this._model.modelName, this._pipeline]]
     if (!populateAssociation) return explain
+    if (populateAssociation && populateAssociation._fields) {
+      Populator.prePopulateAggregate(this, populateAssociation._fields)
+    }
+    explain = [['aggregate', this._model.modelName, this._pipeline]]
     return explain.concat(Populator.explainPopulateAggregate(this._model, [this._model._explain()], populateAssociation))
   }
 

@@ -342,21 +342,21 @@ Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike.assemb
 [
   [
     'aggregate', 'Rider', [{
-      '$match': {
+      $match: {
         _id: 5 b47845d8222031fd88ef049
       }
     }, {
-      '$limit': 1
+      $limit: 1
     }, {
-      '$lookup': {
+      $lookup: {
         from: 'helmets',
-        let: {
+        'let': {
           localField: '$helmetId'
         },
         pipeline: [{
-          '$match': {
-            '$expr': {
-              '$eq': ['$$localField', '$_id']
+          $match: {
+            $expr: {
+              $eq: ['$$localField', '$_id']
             }
           }
         }],
@@ -364,18 +364,17 @@ Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike.assemb
       }
     },
     {
-      '$unwind': '$helmet'
+      $unwind: '$helmet'
     }, {
-      '$lookup': {
+      $lookup: {
         from: 'bikes',
-        let:
-        {
+        let: {
           localField: '$bikeId'
         },
         pipeline: [{
-          '$match': {
-            '$expr': {
-              '$eq': ['$$localField', '$_id']
+          $match: {
+            $expr: {
+              $eq: ['$$localField', '$_id']
             }
           }
         }],
@@ -383,17 +382,33 @@ Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike.assemb
       }
     },
     {
-      '$unwind': '$bike'
-    }]
-  ], [
-    'query', 'Assembly', {
-      vehicleId: ['Bike._id'],
-      vehicleIdType: 'Bike'
+      $unwind: '$bike'
     }
   ], [
-    'query', 'Part', {
-      _id: ['Assembly.partId']
+    'aggregate', 'Assembly', [{
+      $match: {
+        vehicleId: {
+          $in: [ 'Bike._id' ]
+        },
+        vehicleIdType: 'Bike'
+      }
+    }, {
+      $lookup: {
+        from: 'parts',
+        let: { localField: '$partId' },
+        pipeline: [{
+          $match: {
+            $expr: {
+              $eq: [ '$$localField', '$_id' ]
+            }
+          }
+        }],
+        as: 'part'
+      }
+    }, {
+      $unwind: '$part'
     }
   ]
 ]
 ```
+built @ ![OneVigor Logo](https://webitems.onevigor.tv/email/onevigor-logo.png)
