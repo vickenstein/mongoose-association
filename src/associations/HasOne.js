@@ -1,5 +1,4 @@
 const Has = require('./Has')
-const mongoose = require('mongoose')
 
 module.exports = class HasOne extends Has {
   static get query() {

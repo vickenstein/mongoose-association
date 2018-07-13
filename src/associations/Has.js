@@ -1,5 +1,5 @@
-const Association = require('./Association')
 const mongoose = require('mongoose')
+const Association = require('./Association')
 
 const OPTIONS = {
   with: 'name of the property that store the reference on the association',
@@ -13,13 +13,17 @@ module.exports = class Has extends Association {
     return Object.keys(OPTIONS).concat(Association.options)
   }
 
+  static get isReference() {
+    return true
+  }
+
   constructor(options) {
-    if (!options.foreignModelName) throw "Can\'t create a has association without specifying a foreignModelName"
+    if (!options.foreignModelName) throw "Can't create a has association without specifying a foreignModelName"
     return super(...arguments)
   }
 
   get isReference() {
-    return true
+    return this.constructor.isReference
   }
 
   get through() {
@@ -96,80 +100,78 @@ module.exports = class Has extends Association {
       const hydrateOptions = { model: this.foreignModel, reset: true }
       hydrateOptions[this.throughAsAssociation.with] = { model: this.throughModel }
 
-      const aggregate = this.throughAsAssociation.aggregate({ $match, as: this.foreignModelName }).invertAssociation(this.throughAsAssociation.with, this.throughAs).hydrateAssociation(hydrateOptions)
+      const aggregate = this.throughAsAssociation.aggregate({
+        $match,
+        as: this.foreignModelName
+      }).invertAssociation(this.throughAsAssociation.with, this.throughAs)
+        .hydrateAssociation(hydrateOptions)
       if (this.associationType === 'hasOne') aggregate.singular()
       return aggregate
-    } else {
-      const { modelName, associationType, localField } = this.withAssociation
-      const query = this.constructor.query
-      if (associationType === 'polymorphic') {
-        const { typeField } = this.withAssociation
-        return query({
-          modelName,
-          localField,
-          localFieldValue: document._id,
-          typeField,
-          type: document.constructor.modelName || document.modelName // second case for explain method
-        })
-      } else {
-        return query({
-          modelName,
-          localField,
-          localFieldValue: document._id
-        })
-      }
     }
+
+    const { modelName, associationType, localField } = this.withAssociation
+    const { query } = this.constructor
+    if (associationType === 'polymorphic') {
+      const { typeField } = this.withAssociation
+      return query({
+        modelName,
+        localField,
+        localFieldValue: document._id,
+        typeField,
+        type: document.constructor.modelName || document.modelName // second case for explain method
+      })
+    }
+    return query({
+      modelName,
+      localField,
+      localFieldValue: document._id
+    })
   }
 
   findManyFor(documents) {
     if (this.through) {
-
       const $match = {}
-
       if (this.withAssociation.isReference) {
-        $match._id = {
-          $in: documents.map(document => document[this.throughWithAsAssociation.localField])
-        }
+        const ids = documents.map(document => document[this.throughWithAsAssociation.localField])
+        $match._id = { $in: ids }
       } else {
         if (this.withAssociation.associationType === 'polymorphic') $match[this.withAssociation.typeField] = documents[0].constructor.modelName
-        $match[this.withAssociation.localField] = {
-          $in: documents.map(document => document._id)
-        }
+        const ids = documents.map(document => document._id)
+        $match[this.withAssociation.localField] = { $in: ids }
       }
 
       const hydrateOptions = { model: this.foreignModel, reset: true }
       hydrateOptions[this.throughAsAssociation.with] = { model: this.throughModel }
 
       return this.throughAsAssociation.aggregate({
-        $match, as: this.foreignModelName
-      }).invertAssociation(this.throughAsAssociation.with, this.throughAs).hydrateAssociation(hydrateOptions)
-    } else {
-      const { modelName, associationType, localField } = this.withAssociation
-      if (associationType === 'polymorphic') {
-        const { typeField } = this.withAssociation
-        return Has.find({
-          modelName,
-          localField,
-          localFieldValue: documents.map(document => document._id),
-          typeField,
-          type: documents[0].constructor.modelName || documents[0].modelName // second case for explain method
-        })
-      } else {
-        return Has.find({
-          modelName,
-          localField,
-          localFieldValue: documents.map(document => document._id)
-        })
-      }
+        $match,
+        as: this.foreignModelName
+      }).invertAssociation(this.throughAsAssociation.with, this.throughAs)
+        .hydrateAssociation(hydrateOptions)
     }
+    const { modelName, associationType, localField } = this.withAssociation
+    if (associationType === 'polymorphic') {
+      const { typeField } = this.withAssociation
+      return Has.find({
+        modelName,
+        localField,
+        localFieldValue: documents.map(document => document._id),
+        typeField,
+        type: documents[0].constructor.modelName || documents[0].modelName
+        // second case for explain method
+      })
+    }
+    return Has.find({
+      modelName,
+      localField,
+      localFieldValue: documents.map(document => document._id)
+    })
   }
 
   aggregateLookUpMatch(options, through) {
     let $match = {}
     if (through) {
-      $match = {
-        $expr: { $eq: ['$$localField', this.throughAsAssociation.$foreignField] }
-      }
+      $match = { $expr: { $eq: ['$$localField', this.throughAsAssociation.$foreignField] } }
     } else {
       $match = super.aggregateLookUpMatch(options)
     }
@@ -177,10 +179,8 @@ module.exports = class Has extends Association {
     return $match
   }
 
-  aggregateThroughLookUpMatch(options) {
-    const $match = {
-      $expr: { $eq: ['$$localField', this.throughAsAssociation.$foreignField] }
-    }
+  aggregateThroughLookUpMatch() {
+    const $match = { $expr: { $eq: ['$$localField', this.throughAsAssociation.$foreignField] } }
     if (this.throughAsAssociation.withAssociation && this.throughAsAssociation.withAssociation.associationType === 'polymorphic') {
       $match[this.throughAsAssociation.withAssociation.typeField] = this.throughModelName
     }
@@ -193,31 +193,23 @@ module.exports = class Has extends Association {
 
       aggregate.lookup({
         from: this.throughCollectionName,
-        'let': { localField: this.throughWithAsAssociation.$localField },
-        pipeline: [{
-          $match
-        }],
+        let: { localField: this.throughWithAsAssociation.$localField },
+        pipeline: [{ $match }],
         as: this.throughWithAsAssociation.as
       })
       aggregate.unwind(this.throughWithAsAssociation.$as)
       const $throughMatch = this.aggregateThroughLookUpMatch(options)
       aggregate.lookup({
         from: this.foreignCollectionName,
-        'let': { localField: `${this.throughWithAsAssociation.$as}.${this.throughAsAssociation.localField}` },
-        pipeline: [{
-          $match: $throughMatch
-        }],
+        let: { localField: `${this.throughWithAsAssociation.$as}.${this.throughAsAssociation.localField}` },
+        pipeline: [{ $match: $throughMatch }],
         as: this.throughAs
       })
       aggregate.unwind(this.$throughAs)
       if (this.associationType === 'hasMany') {
-        const $group = { _id: "$_id" }
-        $group[this.as] = {
-          $push: this.$throughAs
-        }
-        $group[this.throughWith] = {
-          $push: this.throughWithAsAssociation.$as
-        }
+        const $group = { _id: '$_id' }
+        $group[this.as] = { $push: this.$throughAs }
+        $group[this.throughWith] = { $push: this.throughWithAsAssociation.$as }
         aggregate.group($group)
       }
       if (options.hydrate !== false) {

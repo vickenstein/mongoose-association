@@ -1,5 +1,5 @@
-const Association = require('./Association')
 const mongoose = require('mongoose')
+const Association = require('./Association')
 
 const OPTIONS = {
   foreignModelNames: 'name of the models this belongsTo polymorphically',
@@ -8,14 +8,13 @@ const OPTIONS = {
 }
 
 module.exports = class Polymorphic extends Association {
-
   static get options() {
     return Object.keys(OPTIONS).concat(Association.options)
   }
 
   constructor(options) {
-    if (!options.foreignModelNames || !options.foreignModelNames.length) throw "Can\'t create a polymorphic association without specifying any foreignModelNames"
-    if (!options.as) throw "Can\'t create a polymorphic association without \'as\' parameter"
+    if (!options.foreignModelNames || !options.foreignModelNames.length) throw "Can't create a polymorphic association without specifying any foreignModelNames"
+    if (!options.as) throw "Can't create a polymorphic association without 'as' parameter"
     return super(...arguments)
   }
 
@@ -54,19 +53,18 @@ module.exports = class Polymorphic extends Association {
   }
 
   aggregateLookUp(aggregate, options) {
-    const foreignModel = mongoose.model(options.documents ? options.documents[0][this.typeField] : options.as)
+    const foreignModel = mongoose.model(
+      options.documents
+        ? options.documents[0][this.typeField]
+        : options.as
+    )
     const foreignModelCollectionName = foreignModel.collection.name
     aggregate.lookup({
       from: foreignModelCollectionName,
-      'let': { localField: this.$localField },
-      pipeline: [{
-        $match: {
-          $expr: { $eq: ['$$localField', this.$foreignField] }
-        }
-      }],
+      let: { localField: this.$localField },
+      pipeline: [{ $match: { $expr: { $eq: ['$$localField', this.$foreignField] } } }],
       as: this.as
     })
-
 
     if (options.hydrate !== false) {
       const hydrateOptions = { model: this.model }

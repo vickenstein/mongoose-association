@@ -1,8 +1,8 @@
 const _ = require('lodash')
 const mongoose = require('mongoose')
-const ObjectId = mongoose.Types.ObjectId
 const inflection = require('inflection')
 
+const { ObjectId } = mongoose.Types
 const OPTIONS = {
   foreignModelName: 'name of the model this belongsTo',
   as: 'name of the property to store the reference object'
@@ -30,7 +30,7 @@ module.exports = class Association {
     return this
   }
 
-  static get options () {
+  static get options() {
     return Object.keys(OPTIONS)
   }
 
@@ -54,9 +54,7 @@ module.exports = class Association {
   }
 
   define(property, value) {
-    Object.defineProperty(this, property, {
-      value
-    })
+    Object.defineProperty(this, property, { value })
     return value
   }
 
@@ -127,7 +125,7 @@ module.exports = class Association {
   }
 
   aggregateMatch(options) {
-    let $match = {}
+    const $match = {}
     if (options.documents) {
       $match._id = { $in: options.documents.map(document => ObjectId(document._id)) }
     }
@@ -136,7 +134,9 @@ module.exports = class Association {
   }
 
   aggregate(options = {}) {
-    if (options.documents && !(options.documents instanceof Array)) options.documents = [options.documents]
+    if (options.documents && !(options.documents instanceof Array)) {
+      options.documents = [options.documents]
+    }
     const aggregate = this.generateAggregateOnModel(options)
     const $match = this.aggregateMatch(options)
     if ($match && Object.keys($match).length) aggregate.match($match)
@@ -149,10 +149,8 @@ module.exports = class Association {
     return aggregate
   }
 
-  aggregateLookUpMatch(options) {
-    return {
-      $expr: { $eq: ['$$localField', this.$foreignField] }
-    }
+  aggregateLookUpMatch() {
+    return { $expr: { $eq: ['$$localField', this.$foreignField] } }
   }
 
   aggregateLookUp(aggregate, options) {
@@ -160,10 +158,8 @@ module.exports = class Association {
 
     aggregate.lookup({
       from: this.foreignCollectionName,
-      'let': { localField: this.$localField },
-      pipeline: [{
-        $match
-      }],
+      let: { localField: this.$localField },
+      pipeline: [{ $match }],
       as: this.as
     })
 

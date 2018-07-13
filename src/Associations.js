@@ -1,13 +1,15 @@
 const _ = require('lodash')
+const belongsTo = require('./associations/BelongsTo')
+const polymorphic = require('./associations/Polymorphic')
+const hasOne = require('./associations/HasOne')
+const hasMany = require('./associations/HasMany')
 
 const ASSOCIATIONS = {
-  belongsTo: require('./associations/BelongsTo'),
-  polymorphic: require('./associations/Polymorphic'),
-  hasOne: require('./associations/HasOne'),
-  hasMany: require('./associations/HasMany')
+  belongsTo,
+  polymorphic,
+  hasOne,
+  hasMany
 }
-
-const ASSOCIATION_CLASSES = ['belongsTo', 'polymorphic', 'hasMany', 'hasOne']
 
 module.exports = class Associations {
   static get types() {
@@ -39,7 +41,6 @@ module.exports = class Associations {
     return this.model.collection.name
   }
 
-
   add(type, options) {
     if (!_.includes(Associations.types, type)) throw `${type} is not a valid association type`
     const Association = Associations.classOf(type)
@@ -48,7 +49,7 @@ module.exports = class Associations {
   }
 
   index(association) {
-    return this.asIndexed[association.as] = association
+    return (this.asIndexed[association.as] = association)
   }
 
   forEach(func) {

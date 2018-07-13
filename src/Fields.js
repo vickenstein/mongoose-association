@@ -11,9 +11,9 @@ module.exports = class Fields {
     fields.forEach(field => {
       let match = 0
       const regexp = new RegExp(`^${field}`)
-      for (let i = 0; i < fields.length; i++) {
+      for (let i = 0; i < fields.length; i += 1) {
         if (fields[i].match(regexp)) {
-          match++
+          match += 1
           if (match > 1) break
         }
       }
@@ -31,7 +31,7 @@ module.exports = class Fields {
   }
 
   children(matchField) {
-    const fields = new Fields
+    const fields = new Fields()
     this.fields.forEach(field => {
       const splitField = field.split('.')
       if (splitField.length > 1 && splitField[0] === matchField) {

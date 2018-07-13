@@ -1,17 +1,14 @@
 const Association = require('./Association')
 
-const OPTIONS = {
-  localField: 'name of the property to store the reference id'
-}
+const OPTIONS = { localField: 'name of the property to store the reference id' }
 
 module.exports = class BelongsTo extends Association {
-
   static get options() {
     return Object.keys(OPTIONS).concat(Association.options)
   }
 
   constructor(options) {
-    if (!options.foreignModelName) throw "Can\'t create a belongsTo association without specifying a foreignModelName"
+    if (!options.foreignModelName) throw "Can't create a belongsTo association without specifying a foreignModelName"
     return super(...arguments)
   }
 

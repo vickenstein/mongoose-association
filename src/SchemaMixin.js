@@ -1,7 +1,11 @@
+/* eslint object-shorthand: 0 */
+/* eslint no-underscore-dangle: [2, { "allow": ["_id", "_doc"] }] */
+
 const _ = require('lodash')
 const mongoose = require('mongoose')
-const ObjectId = mongoose.Schema.Types.ObjectId
-const Associations = require('./associations')
+const Associations = require('./Associations')
+
+const { ObjectId } = mongoose.Schema.Types
 
 module.exports = class SchemaMixin {
   associate(as) {
@@ -18,15 +22,16 @@ module.exports = class SchemaMixin {
   }
 
   defineBelongsToSchema({ foreignModelName, localField }, schemaOptions) {
+    function get() {
+      const _id = this._doc[localField]
+      if (!_id) return _id
+      if (_id.constructor.name !== 'ObjectID') return _id._id
+      return _id
+    }
     _.merge(schemaOptions, {
       type: ObjectId,
       ref: foreignModelName,
-      get: function() {
-        const _id = this._doc[localField]
-        if (!_id) return _id
-        if (_id.constructor.name !== 'ObjectID') return _id._id
-        return _id
-      }
+      get
     })
 
     const schema = {}
@@ -36,9 +41,10 @@ module.exports = class SchemaMixin {
 
   defineBelongsToVirtual(association) {
     const { as, $as, localField, $fetch, $unset } = association
-    this.virtual(as).get(async function() {
-      if (!this.hasOwnProperty($as)) {
-        const reference = this._doc[localField] // using native mongoose localField populate design for belongsTo
+    this.virtual(as).get(async function get() {
+      if (!Object.prototype.hasOwnProperty.call(this, $as)) {
+        const reference = this._doc[localField]
+        // using native mongoose localField populate design for belongsTo
         if (!reference) return null
         if (reference.constructor instanceof association.foreignModel) {
           this[$as] = reference
@@ -47,16 +53,16 @@ module.exports = class SchemaMixin {
         }
       }
       return this[$as]
-    }).set(function(value) {
+    }).set(function set(value) {
       if (value instanceof association.foreignModel) this[$as] = value
       this[localField] = value
     })
 
-    this.methods[$fetch] = function() {
+    this.methods[$fetch] = function fetch() {
       return association.findFor(this)
     }
 
-    this.methods[$unset] = function() {
+    this.methods[$unset] = function unset() {
       delete this[$as]
       return this
     }
@@ -71,9 +77,7 @@ module.exports = class SchemaMixin {
   }
 
   definePolymorphicSchema({ foreignModelNames, localField, typeField }, schemaOptions) {
-    _.merge(schemaOptions, {
-      type: ObjectId
-    })
+    _.merge(schemaOptions, { type: ObjectId })
 
     const schema = {}
     schema[localField] = schemaOptions
@@ -86,21 +90,21 @@ module.exports = class SchemaMixin {
 
   definePolymorphicVirtual(association) {
     const { as, $as, localField, typeField, $fetch, $unset } = association
-    this.virtual(as).get(async function() {
+    this.virtual(as).get(async function get() {
       if (!this._doc[localField]) return null
-      if (!this.hasOwnProperty($as)) this[$as] = await this[$fetch]()
+      if (!Object.prototype.hasOwnProperty.call(this, $as)) this[$as] = await this[$fetch]()
       return this[$as]
-    }).set(function(value) {
+    }).set(function set(value) {
       this[typeField] = value.constructor.modelName
       this[localField] = value._id
       this[$as] = value
     })
 
-    this.methods[$fetch] = function() {
+    this.methods[$fetch] = function fetch() {
       return association.findFor(this)
     }
 
-    this.methods[$unset] = function() {
+    this.methods[$unset] = function unset() {
       delete this[$as]
       return this
     }
@@ -114,17 +118,17 @@ module.exports = class SchemaMixin {
   }
 
   defineHasOneVirtual(association) {
-    const { foreignModelName, as, $as, $fetch, $unset } = association
-    this.virtual(as).get(async function() {
-      if (!this.hasOwnProperty($as)) this[$as] = await this[$fetch]()
+    const { as, $as, $fetch, $unset } = association
+    this.virtual(as).get(async function get() {
+      if (!Object.prototype.hasOwnProperty.call(this, $as)) this[$as] = await this[$fetch]()
       return this[$as]
     })
 
-    this.methods[$fetch] = function() {
+    this.methods[$fetch] = function fetch() {
       return association.findFor(this)
     }
 
-    this.methods[$unset] = function() {
+    this.methods[$unset] = function unset() {
       delete this[$as]
       return this
     }
@@ -138,17 +142,17 @@ module.exports = class SchemaMixin {
   }
 
   defineHasManyVirtual(association) {
-    const { foreignModelNames, as, $as, $fetch, $unset } = association
-    this.virtual(as).get(async function() {
-      if (!this.hasOwnProperty($as)) this[$as] = await this[$fetch]()
+    const { as, $as, $fetch, $unset } = association
+    this.virtual(as).get(async function get() {
+      if (!Object.prototype.hasOwnProperty.call(this, $as)) this[$as] = await this[$fetch]()
       return this[$as]
     })
 
-    this.methods[$fetch] = function() {
+    this.methods[$fetch] = function fetch() {
       return association.findFor(this)
     }
 
-    this.methods[$unset] = function() {
+    this.methods[$unset] = function unset() {
       delete this[$as]
       return this
     }
@@ -164,5 +168,3 @@ module.exports = class SchemaMixin {
     })
   }
 }
-
-
