@@ -236,7 +236,7 @@ const patchModel = mongoose => {
   const modelMethod = mongoose.model
   mongoose.model = function model(name, schema, collection, skipInit) {
     const currentModel = modelMethod.apply(this, [name, schema, collection, skipInit])
-    if (schema) schema.model = model
+    if (schema) schema.model = currentModel
     return currentModel
   }
 }
