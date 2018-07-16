@@ -149,7 +149,10 @@ module.exports = class SchemaMixin {
     })
 
     this.methods[$fetch] = function fetch() {
-      return association.findFor(this)
+      return association.findFor(this).collectAssociation({
+        document: this,
+        association
+      })
     }
 
     this.methods[$unset] = function unset() {

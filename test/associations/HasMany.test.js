@@ -4,6 +4,7 @@ const mongoose = require('mongoose')
 const ObjectId = mongoose.Types.ObjectId
 
 const HasMany = require('src/associations/HasMany')
+const Collection = require('src/Collection')
 const drop = require('test/helpers/drop')
 
 const testSchema = new mongoose.Schema
@@ -69,6 +70,7 @@ describe("Some shared functionality of the has reference", () => {
       const part = await Part.findOne({ _id: parts[0]._id })
       const assemblies = await part.assemblies
       assert.isOk(assemblies)
+      assert.isOk(assemblies instanceof Collection)
       assert.strictEqual(assemblies.length, PARTPERBIKE * 2)
     })
 
@@ -76,6 +78,7 @@ describe("Some shared functionality of the has reference", () => {
       const bike = await Bike.findOne({ _id: ObjectIds[0] })
       const assemblies = await bike.assemblies
       assert.isOk(assemblies)
+      assert.isOk(assemblies instanceof Collection)
       assert.strictEqual(assemblies.length, PARTPERBIKE)
     })
 
@@ -83,6 +86,7 @@ describe("Some shared functionality of the has reference", () => {
       const part = await Part.findOne({ _id: parts[0]._id })
       const bikes = await part.bikes
       assert.isOk(bikes)
+      assert.isOk(bikes instanceof Collection)
       assert.strictEqual(bikes.length, PARTPERBIKE)
     })
 
@@ -90,11 +94,18 @@ describe("Some shared functionality of the has reference", () => {
       const bike = await Bike.findOne({ _id: bikes[0]._id })
       const parts = await bike.components
       assert.isOk(parts)
+      assert.isOk(parts instanceof Collection)
       assert.strictEqual(parts.length, PARTPERBIKE)
     })
   })
 
   describe("findManyFor()", () => {
+    it ('get the associate hasMany', async () => {
+      const hasMany = Bike.associate('assemblies')
+      const aggregate = await hasMany.findManyFor(bikes)
+      const results = await aggregate
+      assert.strictEqual(results.length, BIKECOUNT * PARTPERBIKE)
+    })
     it ('get the associate hasMany through and invert result', async () => {
       const hasMany = Bike.associate('components')
       const aggregate = hasMany.findManyFor(bikes)

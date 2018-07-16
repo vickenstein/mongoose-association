@@ -21,6 +21,7 @@ const SchemaMixin = require('./src/SchemaMixin')
 const Populator = require('./src/Populator')
 const Hydrator = require('./src/Hydrator')
 const Fields = require('./src/Fields')
+const Collection = require('./src/Collection')
 
 const POPULATABLE_QUERY = ['find', 'findOne']
 
@@ -82,21 +83,30 @@ const patchQueryPrototype = Query => {
     return this
   }
 
-  Query.prototype.exec = function exec(options, callback) {
-    if (!this._populateAssociation) return _exec.call(this, options, callback)
+  Query.prototype.collectAssociation = function collectAssociation(options) {
+    this._collectAssociation = options
+    return this
+  }
 
-    const fields = Populator.checkFields(this._populateAssociation)
+  Query.prototype.exec = function exec(options, callback) {
+    const populateAssociation = this._populateAssociation && Populator.checkFields(this._populateAssociation)
+    const collectAssociation = this._collectAssociation
+
+    if (!populateAssociation && !collectAssociation) return _exec.call(this, options, callback)
+
+    //_.includes(POPULATABLE_QUERY, this.op) not sure if all query type will work ok
 
     return new Promise((resolve, reject) => {
-      if (fields.root.length && _.includes(POPULATABLE_QUERY, this.op)) {
-        const aggregate = Populator.aggregateFromQuery(this, fields)
+      if (populateAssociation && populateAssociation.root.length) {
+        const aggregate = Populator.aggregateFromQuery(this, populateAssociation)
         aggregate.then(documents => resolve(documents))
           .catch(error => reject(error))
       } else {
         _exec.call(this, options, (error, documents) => {
           if (error) return reject(error)
+          if (collectAssociation) documents = Collection.collect(documents, collectAssociation)
           if (!documents) return resolve(documents)
-          return Populator.populate(this.model, documents, fields)
+          return Populator.populate(this.model, documents, populateAssociation)
             .then(() => resolve(documents))
             .catch(populateError => reject(populateError))
         })
@@ -171,10 +181,16 @@ const patchAggregatePrototype = Aggregate => {
     return this
   }
 
+  Aggregate.prototype.collectAssociation = function collectAssociation(options) {
+    this._collectAssociation = options
+    return this
+  }
+
   Aggregate.prototype.exec = function exec(callback) {
     const populateAssociation = this._populateAssociation
     const hydrateAssociation = this._hydrateAssociation
     const invertAssociation = this._invertAssociation
+    const collectAssociation = this._collectAssociation
     const singular = this._singular
 
     if (!populateAssociation
@@ -199,6 +215,7 @@ const patchAggregatePrototype = Aggregate => {
           })
         }
         if (hydrateAssociation) documents = Hydrator.hydrate(documents, hydrateAssociation)
+        if (collectAssociation) documents = Collection.collect(documents, collectAssociation)
         if (populateAssociation) {
           return Populator.populateAggregate(this._model, documents, populateAssociation)
             .then(() => {
