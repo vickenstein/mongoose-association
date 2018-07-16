@@ -1,3 +1,10 @@
+/* eslint no-underscore-dangle: [2, {
+  "allow": [
+    "_id",
+    "_throughAs",
+    "_as"
+  ] }] */
+
 const mongoose = require('mongoose')
 const Association = require('./Association')
 
@@ -51,12 +58,20 @@ module.exports = class Has extends Association {
     return this.define('throughAs', this.throughModelName && Association.decapitalize(this.foreignModelName))
   }
 
+  get _throughAs() {
+    return this.define('_throughAs', this.through && Association.cacheKey(this.throughAs))
+  }
+
   get $throughAs() {
     return this.define('$throughAs', this.through && Association.variablize(this.throughAs))
   }
 
   get throughWith() {
     return this.define('throughWith', this.throughModelName && Association.decapitalize(this.throughModelName))
+  }
+
+  get _throughWith() {
+    return this.define('_throughWith', this.through && Association.cacheKey(this.throughWith))
   }
 
   get $throughWith() {
@@ -208,8 +223,8 @@ module.exports = class Has extends Association {
       aggregate.unwind(this.$throughAs)
       if (this.associationType === 'hasMany') {
         const $group = { _id: '$_id' }
-        $group[this.as] = { $push: this.$throughAs }
-        $group[this.throughWith] = { $push: this.throughWithAsAssociation.$as }
+        $group[this.as] = { $push: this._throughAs }
+        $group[this.throughWith] = { $push: this.throughWithAsAssociation._as }
         aggregate.group($group)
       }
       if (options.hydrate !== false) {

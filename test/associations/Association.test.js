@@ -66,4 +66,16 @@ describe("Some shared functionality of association object", () => {
       assert.strictEqual(association.$as, '$roughRider')
     })
   })
+
+  describe("get #_as", () => {
+    it('get the property where the reference object cache is stored', () => {
+      const association = new Association({ foreignModelName: 'Rider' }, testSchema)
+      assert.strictEqual(association._as, '_rider')
+    })
+
+    it('get the property where the reference object is stored with custom as', () => {
+      const association = new Association({ foreignModelName: 'Rider', as: 'roughRider' }, testSchema)
+      assert.strictEqual(association._as, '_roughRider')
+    })
+  })
 })

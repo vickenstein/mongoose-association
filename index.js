@@ -11,7 +11,8 @@
     "_conditions",
     "_fields",
     "_model",
-    "_pipeline"
+    "_pipeline",
+    "_collectAssociation"
   ] }] */
 
 const _ = require('lodash')
@@ -89,12 +90,13 @@ const patchQueryPrototype = Query => {
   }
 
   Query.prototype.exec = function exec(options, callback) {
-    const populateAssociation = this._populateAssociation && Populator.checkFields(this._populateAssociation)
+    const populateAssociation = this._populateAssociation
+      && Populator.checkFields(this._populateAssociation)
     const collectAssociation = this._collectAssociation
 
     if (!populateAssociation && !collectAssociation) return _exec.call(this, options, callback)
 
-    //_.includes(POPULATABLE_QUERY, this.op) not sure if all query type will work ok
+    // _.includes(POPULATABLE_QUERY, this.op)not sure if all query type will work ok
 
     return new Promise((resolve, reject) => {
       if (populateAssociation && populateAssociation.root.length) {

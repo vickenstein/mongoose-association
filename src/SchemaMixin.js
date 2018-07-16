@@ -1,9 +1,15 @@
 /* eslint object-shorthand: 0 */
-/* eslint no-underscore-dangle: [2, { "allow": ["_id", "_doc"] }] */
+/* eslint no-underscore-dangle: [2, {
+  "allow": [
+    "_id",
+    "_doc",
+    "_as"
+  ]}] */
 
 const _ = require('lodash')
 const mongoose = require('mongoose')
 const Associations = require('./Associations')
+const Collection = require('./Collection')
 
 const { ObjectId } = mongoose.Schema.Types
 
@@ -40,22 +46,26 @@ module.exports = class SchemaMixin {
   }
 
   defineBelongsToVirtual(association) {
-    const { as, $as, localField, $fetch, $unset } = association
+    const { as, _as, $as, localField, $fetch, $unset } = association
     this.virtual(as).get(async function get() {
-      if (!Object.prototype.hasOwnProperty.call(this, $as)) {
+      if (!Object.prototype.hasOwnProperty.call(this, _as)) {
         const reference = this._doc[localField]
         // using native mongoose localField populate design for belongsTo
         if (!reference) return null
         if (reference.constructor instanceof association.foreignModel) {
-          this[$as] = reference
+          this[_as] = reference
         } else {
-          this[$as] = await this[$fetch]()
+          this[_as] = await this[$fetch]()
         }
       }
-      return this[$as]
+      return this[_as]
     }).set(function set(value) {
-      if (value instanceof association.foreignModel) this[$as] = value
+      if (value instanceof association.foreignModel) this[_as] = value
       this[localField] = value
+    })
+
+    this.virtual($as).get(function get() {
+      return this[_as]
     })
 
     this.methods[$fetch] = function fetch() {
@@ -63,7 +73,7 @@ module.exports = class SchemaMixin {
     }
 
     this.methods[$unset] = function unset() {
-      delete this[$as]
+      delete this[_as]
       return this
     }
   }
@@ -89,15 +99,19 @@ module.exports = class SchemaMixin {
   }
 
   definePolymorphicVirtual(association) {
-    const { as, $as, localField, typeField, $fetch, $unset } = association
+    const { as, _as, $as, localField, typeField, $fetch, $unset } = association
     this.virtual(as).get(async function get() {
       if (!this._doc[localField]) return null
-      if (!Object.prototype.hasOwnProperty.call(this, $as)) this[$as] = await this[$fetch]()
-      return this[$as]
+      if (!Object.prototype.hasOwnProperty.call(this, _as)) this[_as] = await this[$fetch]()
+      return this[_as]
     }).set(function set(value) {
       this[typeField] = value.constructor.modelName
       this[localField] = value._id
-      this[$as] = value
+      this[_as] = value
+    })
+
+    this.virtual($as).get(function get() {
+      return this[_as]
     })
 
     this.methods[$fetch] = function fetch() {
@@ -105,7 +119,7 @@ module.exports = class SchemaMixin {
     }
 
     this.methods[$unset] = function unset() {
-      delete this[$as]
+      delete this[_as]
       return this
     }
   }
@@ -118,10 +132,14 @@ module.exports = class SchemaMixin {
   }
 
   defineHasOneVirtual(association) {
-    const { as, $as, $fetch, $unset } = association
+    const { as, _as, $as, $fetch, $unset } = association
     this.virtual(as).get(async function get() {
-      if (!Object.prototype.hasOwnProperty.call(this, $as)) this[$as] = await this[$fetch]()
-      return this[$as]
+      if (!Object.prototype.hasOwnProperty.call(this, _as)) this[_as] = await this[$fetch]()
+      return this[_as]
+    })
+
+    this.virtual($as).get(function get() {
+      return this[_as]
     })
 
     this.methods[$fetch] = function fetch() {
@@ -129,7 +147,7 @@ module.exports = class SchemaMixin {
     }
 
     this.methods[$unset] = function unset() {
-      delete this[$as]
+      delete this[_as]
       return this
     }
   }
@@ -142,10 +160,10 @@ module.exports = class SchemaMixin {
   }
 
   defineHasManyVirtual(association) {
-    const { as, $as, $fetch, $unset } = association
+    const { as, _as, $as, $fetch, $unset } = association
     this.virtual(as).get(async function get() {
-      if (!Object.prototype.hasOwnProperty.call(this, $as)) this[$as] = await this[$fetch]()
-      return this[$as]
+      if (!Object.prototype.hasOwnProperty.call(this, _as)) this[_as] = await this[$fetch]()
+      return this[_as]
     })
 
     this.methods[$fetch] = function fetch() {
@@ -155,8 +173,13 @@ module.exports = class SchemaMixin {
       })
     }
 
+    this.virtual($as).get(function get() {
+      if (this[_as]) return this[_as]
+      return (this[_as] = new Collection(this, association))
+    })
+
     this.methods[$unset] = function unset() {
-      delete this[$as]
+      delete this[_as]
       return this
     }
   }

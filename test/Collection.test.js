@@ -151,4 +151,11 @@ describe('A collection of record that is affiliated with an specific has many as
       assert.strictEqual(sameParts.length, 3)
     })
   })
+
+  describe('#virtual $as', async () => {
+    const car = await new Car().save()
+    const assembly = await car.$assemblies.create()
+    const assemblies = await car.fetch('assemblies')
+    assert.strictEqual(assemblies.length, 1)
+  })
 })

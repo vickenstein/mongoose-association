@@ -1,3 +1,10 @@
+/* eslint no-underscore-dangle: [2, {
+  "allow": [
+    "_id",
+    "$__",
+    "_push"
+  ] }] */
+
 module.exports = class Collection extends Array {
   static collect(documents, options) {
     if (!options.document || !options.association) throw 'missing collection options'
@@ -18,15 +25,17 @@ module.exports = class Collection extends Array {
 
   async push(...foreignObjects) {
     if (!this.association.through) {
-      const {as} = this.association.withAssociation
-      foreignObjects.forEach(foreignObject => foreignObject[as] = this.document)
+      const { as } = this.association.withAssociation
+      foreignObjects.forEach(foreignObject => (foreignObject[as] = this.document))
       const condition = { _id: foreignObjects.map(foreignObject => foreignObject._id) }
       const attributes = {}
       Object.keys(foreignObjects[0].$__.activePaths.states.modify).forEach(key => {
         attributes[key] = foreignObjects[0][key]
       })
       await foreignObjects[0].constructor.updateMany(condition, attributes)
-      foreignObjects.forEach(foreignObject => foreignObjects[0].$__.activePaths.states.modify = {})
+      foreignObjects.forEach(foreignObject => {
+        foreignObject.$__.activePaths.states.modify = {}
+      })
     }
     this._push(...foreignObjects)
     if (this.association.through) {
@@ -36,16 +45,16 @@ module.exports = class Collection extends Array {
         throughAttribute[this.association.withAssociation.as] = this.document
         return throughAttribute
       })
-      const throughObjects = await this.association.throughModel.create(throughAttributes)
+      await this.association.throughModel.create(throughAttributes)
     }
-    return foreignObjects.length == 1 ? foreignObjects[0] : foreignObjects
+    return foreignObjects.length === 1 ? foreignObjects[0] : foreignObjects
   }
 
   async create(attributes = {}, options) {
     if (attributes instanceof Array) return this.createMany(attributes, options)
     const model = this.association.foreignModel
     if (!this.association.through) {
-      const {as} = this.association.withAssociation
+      const { as } = this.association.withAssociation
       attributes[as] = this.document
     }
     const foreignObject = await model.create(attributes, options)
@@ -54,7 +63,7 @@ module.exports = class Collection extends Array {
       const throughAttributes = {}
       throughAttributes[this.association.throughAsAssociation.as] = foreignObject
       throughAttributes[this.association.withAssociation.as] = this.document
-      const throughObject = await this.association.throughModel.create(throughAttributes)
+      await this.association.throughModel.create(throughAttributes)
     }
     return foreignObject
   }
@@ -63,7 +72,7 @@ module.exports = class Collection extends Array {
     const model = this.association.foreignModel
     if (!this.association.through) {
       attributes.forEach(attribute => {
-        const {as} = this.association.withAssociation
+        const { as } = this.association.withAssociation
         attribute[as] = this.document
       })
     }
@@ -76,7 +85,7 @@ module.exports = class Collection extends Array {
         throughAttribute[this.association.withAssociation.as] = this.document
         return throughAttribute
       })
-      const throughObjects = await this.association.throughModel.create(throughAttributes)
+      await this.association.throughModel.create(throughAttributes)
     }
     return foreignObjects
   }

@@ -4,10 +4,13 @@
     "_explain",
     "_conditions",
     "_model",
+    "_field",
+    "_with"
   ] }] */
 
 const _ = require('lodash')
 const Fields = require('./Fields')
+const Association = require('./associations/Association')
 
 module.exports = class Populator {
   static checkFields(populateFields) {
@@ -46,18 +49,18 @@ module.exports = class Populator {
   }
 
   static async populateField(model, documents, field, childrenFields) {
-    const $field = `$${field}`
+    const _field = Association.cacheKey(field)
     const association = model.associate(field)
     const results = await association.findFor(documents).populateAssociation(childrenFields)
     const enumerateMethod = association.associationType === 'hasMany' ? 'groupBy' : 'keyBy'
     const { localField } = association
     let { foreignField } = association
     if (association.through) {
-      foreignField = document => document[association.throughAsAssociation.$with][foreignField]
+      foreignField = document => document[association.throughAsAssociation._with][foreignField]
     }
     const indexedResults = _[enumerateMethod](results, foreignField)
     documents.forEach(document => {
-      document[$field] = indexedResults[document[localField]]
+      document[_field] = indexedResults[document[localField]]
     })
     return documents
   }
@@ -89,8 +92,8 @@ module.exports = class Populator {
     const promises = []
     populateFields.forEach(field => {
       if (field !== '_fields') {
-        const $field = `$${field}`
-        const nestedDocuments = _.compact(_.flatten(documents.map(document => document[$field])))
+        const _field = Association.cacheKey(field)
+        const nestedDocuments = _.compact(_.flatten(documents.map(document => document[_field])))
         if (nestedDocuments.length) {
           promises.push(this.populate(
             nestedDocuments[0].constructor,

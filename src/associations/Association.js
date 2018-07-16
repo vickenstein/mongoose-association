@@ -34,6 +34,10 @@ module.exports = class Association {
     return Object.keys(OPTIONS)
   }
 
+  static cacheKey(string) {
+    return `_${string}`
+  }
+
   static variablize(string) {
     return `$${string}`
   }
@@ -98,12 +102,20 @@ module.exports = class Association {
     return this.define('$unset', `unset${inflection.capitalize(this.as)}`)
   }
 
+  get _as() {
+    return this.define('_as', Association.cacheKey(this.as))
+  }
+
   get $as() {
     return this.define('$as', Association.variablize(this.as))
   }
 
   get with() {
     return this.define('with', Association.decapitalize(this.modelName))
+  }
+
+  get _with() {
+    return this.define('$with', Association.cacheKey(this.with))
   }
 
   get $with() {
