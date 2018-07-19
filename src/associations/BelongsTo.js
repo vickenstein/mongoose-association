@@ -37,7 +37,6 @@ module.exports = class BelongsTo extends Association {
   }
 
   index(order, options) {
-    const index = {}
     this.schema.indexAssociations([this, order], options)
     return this
   }
