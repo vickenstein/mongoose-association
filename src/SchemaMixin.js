@@ -19,12 +19,28 @@ module.exports = class SchemaMixin {
     return this.associations.associate(as)
   }
 
+  indexAssociations(...associations) {
+    const lastAssociation = associations[associations.length - 1]
+    let options
+    if (!lastAssociation || lastAssociation instanceof Object) {
+      options = associations.pop()
+    }
+    const indexes = {}
+    associations.forEach(([association, order]) => {
+      indexes[association.localField] = order
+      if (association.associationType === 'polymorphic') indexes[association.typeField] = order
+    })
+    this.index(indexes, options)
+    return this
+  }
+
   belongsTo(foreignModelName, options = {}, schemaOptions = {}) {
     if (!this.associations) this.associations = new Associations(this)
     const association = this.associations.add('belongsTo', _.merge({}, options, { foreignModelName }))
 
     this.defineBelongsToSchema(association, schemaOptions)
     this.defineBelongsToVirtual(association)
+    return association
   }
 
   defineBelongsToSchema({ foreignModelName, localField }, schemaOptions) {
@@ -84,6 +100,8 @@ module.exports = class SchemaMixin {
 
     this.definePolymorphicSchema(association, schemaOptions)
     this.definePolymorphicVirtual(association)
+
+    return association
   }
 
   definePolymorphicSchema({ foreignModelNames, localField, typeField }, schemaOptions) {
@@ -129,6 +147,8 @@ module.exports = class SchemaMixin {
     const association = this.associations.add('hasOne', _.merge({}, options, { foreignModelName }))
 
     this.defineHasOneVirtual(association)
+
+    return association
   }
 
   defineHasOneVirtual(association) {
@@ -157,6 +177,8 @@ module.exports = class SchemaMixin {
     const association = this.associations.add('hasMany', _.merge({}, options, { foreignModelName }))
 
     this.defineHasManyVirtual(association)
+
+    return association
   }
 
   defineHasManyVirtual(association) {

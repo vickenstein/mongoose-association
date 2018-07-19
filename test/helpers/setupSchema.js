@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 const riderSchema = new Schema()
-riderSchema.belongsTo('Bike')
+riderSchema.belongsTo('Bike').index(1, { sparse: true })
 riderSchema.belongsTo('Helmet')
 
 const bikeSchema = new Schema()
@@ -58,10 +58,11 @@ carSchema.hasOne('Alien', {
 })
 
 const assemblySchema = new Schema()
-assemblySchema.polymorphic(['Bike', 'Car'], {
+const vehicleAssociation = assemblySchema.polymorphic(['Bike', 'Car'], {
   as: 'vehicle'
 })
-assemblySchema.belongsTo('Part')
+const partAssociation = assemblySchema.belongsTo('Part')
+assemblySchema.indexAssociations([vehicleAssociation, 1], [partAssociation, 1], { unique: true })
 
 const partSchema = new Schema()
 partSchema.hasMany('Assembly')

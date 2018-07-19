@@ -35,4 +35,10 @@ module.exports = class BelongsTo extends Association {
       localFieldValue: documents.map(document => document[this.localField])
     })
   }
+
+  index(order, options) {
+    const index = {}
+    this.schema.indexAssociations([this, order], options)
+    return this
+  }
 }

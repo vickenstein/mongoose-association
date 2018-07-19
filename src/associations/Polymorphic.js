@@ -77,4 +77,10 @@ module.exports = class Polymorphic extends Association {
     if (!options.documents && !options.as) throw 'polymorphic aggregation requires an documents or option { as }'
     return super.aggregate(options)
   }
+
+  index(order, options) {
+    const index = {}
+    this.schema.indexAssociations([this, order], options)
+    return this
+  }
 }

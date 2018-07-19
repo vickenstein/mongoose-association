@@ -152,10 +152,12 @@ describe('A collection of record that is affiliated with an specific has many as
     })
   })
 
-  describe('#virtual $as', async () => {
-    const car = await new Car().save()
-    const assembly = await car.$assemblies.create()
-    const assemblies = await car.fetch('assemblies')
-    assert.strictEqual(assemblies.length, 1)
+  describe('#virtual $as', () => {
+    it ('using $as to create assemblies', async () => {
+      const car = await new Car().save()
+      const assembly = await car.$assemblies.create()
+      const assemblies = await car.fetch('assemblies')
+      assert.strictEqual(assemblies.length, 1)
+    })
   })
 })
