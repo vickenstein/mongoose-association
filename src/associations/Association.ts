@@ -239,7 +239,7 @@ export class Association {
       as: this.as,
     })
 
-    if (options.hydrate) {
+    if (options.hydrate !== false) {
       const hydrateOptions: any = { model: this.model }
       hydrateOptions[this.as] = { model: this.foreignModel }
       aggregate.hydrateAssociation(hydrateOptions)

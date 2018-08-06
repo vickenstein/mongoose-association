@@ -254,7 +254,7 @@ export class Has extends Association {
         $group[this.throughWith] = { $push: this.throughWithAsAssociation._as }
         aggregate.group($group)
       }
-      if (options.hydrate) {
+      if (options.hydrate !== false) {
         const hydrateOptions: any = { model: this.model }
         hydrateOptions[this.as] = { model: this.foreignModel }
         hydrateOptions[this.throughWithAsAssociation.as] = { model: this.throughModel }

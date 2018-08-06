@@ -121,7 +121,6 @@ const patchAggregatePrototype = (Aggregate) => {
         return this;
     };
     Aggregate.prototype.hydrateAssociation = function hydrateAssociation(options) {
-        console.log(options, "Aggregate, hydrate");
         if (options.reset) {
             delete options.reset;
             this._hydrateAssociation = options;

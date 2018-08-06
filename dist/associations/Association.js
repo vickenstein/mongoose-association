@@ -163,7 +163,7 @@ class Association {
             pipeline: [{ $match }],
             as: this.as,
         });
-        if (options.hydrate) {
+        if (options.hydrate !== false) {
             const hydrateOptions = { model: this.model };
             hydrateOptions[this.as] = { model: this.foreignModel };
             aggregate.hydrateAssociation(hydrateOptions);
