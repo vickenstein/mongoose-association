@@ -1,31 +1,33 @@
-/* eslint object-shorthand: 0 */
-/* eslint no-underscore-dangle: [2, {
-  "allow": [
-    "_id",
-    "_doc",
-    "_as"
-  ]}] */
-
-const _ = require('lodash')
-const mongoose = require('mongoose')
-const Associations = require('./Associations')
-const Collection = require('./Collection')
+import * as _ from 'lodash'
+import * as mongoose from 'mongoose'
+import { Association, IOptions } from './associations/Association'
+import { Associations } from './Associations'
+import { Collection } from './Collection'
 
 const { ObjectId } = mongoose.Schema.Types
 
-module.exports = class SchemaMixin {
-  associate(as) {
+declare module "mongoose" {
+  export interface Schema {
+    indexAssociations(...associations: any[]): Schema
+  }
+}
+
+export class SchemaMixin extends mongoose.Schema {
+
+  associations: Associations
+
+  associate(as: string) {
     if (!this.associations) throw 'this schema does not have any associations'
     return this.associations.associate(as)
   }
 
-  indexAssociations(...associations) {
+  indexAssociations(...associations: any[]) {
     const lastAssociation = associations[associations.length - 1]
     let options
     if (!lastAssociation || lastAssociation instanceof Object) {
       options = associations.pop()
     }
-    const indexes = {}
+    const indexes: any = {}
     associations.forEach(([association, order]) => {
       indexes[association.localField] = order
       if (association.associationType === 'polymorphic') indexes[association.typeField] = order
@@ -34,7 +36,7 @@ module.exports = class SchemaMixin {
     return this
   }
 
-  belongsTo(foreignModelName, options = {}, schemaOptions = {}) {
+  belongsTo(foreignModelName: string, options: IOptions = {}, schemaOptions: any = {}) {
     if (!this.associations) this.associations = new Associations(this)
     const association = this.associations.add('belongsTo', _.merge({}, options, { foreignModelName }))
 
@@ -43,7 +45,7 @@ module.exports = class SchemaMixin {
     return association
   }
 
-  defineBelongsToSchema({ foreignModelName, localField }, schemaOptions) {
+  defineBelongsToSchema({ foreignModelName, localField }: IOptions, schemaOptions: any = {}) {
     function get() {
       const _id = this._doc[localField]
       if (!_id) return _id
@@ -56,12 +58,12 @@ module.exports = class SchemaMixin {
       get
     })
 
-    const schema = {}
+    const schema: any = {}
     schema[localField] = schemaOptions
     this.add(schema)
   }
 
-  defineBelongsToVirtual(association) {
+  defineBelongsToVirtual(association: Association) {
     const { as, _as, $as, localField, $fetch, $unset } = association
     this.virtual(as).get(async function get() {
       if (!Object.prototype.hasOwnProperty.call(this, _as)) {
@@ -75,7 +77,7 @@ module.exports = class SchemaMixin {
         }
       }
       return this[_as]
-    }).set(function set(value) {
+    }).set(function set(value: any) {
       if (value instanceof association.foreignModel) this[_as] = value
       this[localField] = value
     })
@@ -94,7 +96,7 @@ module.exports = class SchemaMixin {
     }
   }
 
-  polymorphic(foreignModelNames = [], options = {}, schemaOptions = {}) {
+  polymorphic(foreignModelNames: string[] = [], options: IOptions = {}, schemaOptions: any = {}) {
     if (!this.associations) this.associations = new Associations(this)
     const association = this.associations.add('polymorphic', _.merge({}, options, { foreignModelNames }))
 
@@ -104,10 +106,10 @@ module.exports = class SchemaMixin {
     return association
   }
 
-  definePolymorphicSchema({ foreignModelNames, localField, typeField }, schemaOptions) {
+  definePolymorphicSchema({ foreignModelNames, localField, typeField }: IOptions, schemaOptions: any = {}) {
     _.merge(schemaOptions, { type: ObjectId })
 
-    const schema = {}
+    const schema: any = {}
     schema[localField] = schemaOptions
     schema[typeField] = {
       type: String,
@@ -116,13 +118,13 @@ module.exports = class SchemaMixin {
     this.add(schema)
   }
 
-  definePolymorphicVirtual(association) {
+  definePolymorphicVirtual(association: Association) {
     const { as, _as, $as, localField, typeField, $fetch, $unset } = association
     this.virtual(as).get(async function get() {
       if (!this._doc[localField]) return null
       if (!Object.prototype.hasOwnProperty.call(this, _as)) this[_as] = await this[$fetch]()
       return this[_as]
-    }).set(function set(value) {
+    }).set(function set(value: any) {
       this[typeField] = value.constructor.modelName
       this[localField] = value._id
       this[_as] = value
@@ -142,7 +144,7 @@ module.exports = class SchemaMixin {
     }
   }
 
-  hasOne(foreignModelName, options = {}) {
+  hasOne(foreignModelName: string, options: IOptions = {}) {
     if (!this.associations) this.associations = new Associations(this)
     const association = this.associations.add('hasOne', _.merge({}, options, { foreignModelName }))
 
@@ -151,7 +153,7 @@ module.exports = class SchemaMixin {
     return association
   }
 
-  defineHasOneVirtual(association) {
+  defineHasOneVirtual(association: Association) {
     const { as, _as, $as, $fetch, $unset } = association
     this.virtual(as).get(async function get() {
       if (!Object.prototype.hasOwnProperty.call(this, _as)) this[_as] = await this[$fetch]()
@@ -172,7 +174,7 @@ module.exports = class SchemaMixin {
     }
   }
 
-  hasMany(foreignModelName, options = {}) {
+  hasMany(foreignModelName: string, options: IOptions = {}) {
     if (!this.associations) this.associations = new Associations(this)
     const association = this.associations.add('hasMany', _.merge({}, options, { foreignModelName }))
 
@@ -181,7 +183,7 @@ module.exports = class SchemaMixin {
     return association
   }
 
-  defineHasManyVirtual(association) {
+  defineHasManyVirtual(association: Association) {
     const { as, _as, $as, $fetch, $unset } = association
     this.virtual(as).get(async function get() {
       if (!Object.prototype.hasOwnProperty.call(this, _as)) this[_as] = await this[$fetch]()
@@ -197,7 +199,10 @@ module.exports = class SchemaMixin {
 
     this.virtual($as).get(function get() {
       if (this[_as]) return this[_as]
-      return (this[_as] = new Collection(this, association))
+      return (this[_as] = Collection.collect([], {
+        association,
+        document: this,
+      }))
     })
 
     this.methods[$unset] = function unset() {
@@ -206,8 +211,8 @@ module.exports = class SchemaMixin {
     }
   }
 
-  static apply(originalClass) {
-    const mixinStaticMethods = Object.getOwnPropertyDescriptors(this.prototype)
+  static apply(originalClass: any) {
+    const mixinStaticMethods = (<any>Object).getOwnPropertyDescriptors(this.prototype)
     Object.keys(mixinStaticMethods).forEach(methodName => {
       if (methodName !== 'constructor') {
         const method = mixinStaticMethods[methodName]

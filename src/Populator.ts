@@ -1,33 +1,28 @@
-/* eslint no-param-reassign: 0 */
-/* eslint no-underscore-dangle: [2, {
-  "allow": [
-    "_explain",
-    "_conditions",
-    "_model",
-    "_field",
-    "_with"
-  ] }] */
+import * as _ from 'lodash'
+import * as mongoose from 'mongoose'
+import { Fields } from './Fields'
+import { Association } from './associations/Association'
 
-const _ = require('lodash')
-const Fields = require('./Fields')
-const Association = require('./associations/Association')
+interface LoDashStatic {
+  [enumerateMethod: string]: any
+}
 
-module.exports = class Populator {
-  static checkFields(populateFields) {
+export class Populator {
+  static checkFields(populateFields: any) {
     if (populateFields[0] && populateFields[0] instanceof Fields) {
       return populateFields[0]
     }
     return new Fields(...populateFields)
   }
 
-  static async populate(model, documents, ...populateFields) {
+  static async populate(model: mongoose.Model<any>, documents: any, ...populateFields: any[]) {
     if (!(documents instanceof Array)) documents = [documents]
     if (populateFields[0] instanceof Array) [populateFields] = populateFields
     const fields = this.checkFields(populateFields)
 
     const rootFields = fields.root
 
-    await Promise.all(rootFields.map(rootField => {
+    await Promise.all(rootFields.map((rootField: string): Promise<any> => {
       const childrenFields = fields.children(rootField)
       return this.populateField(model, documents, rootField, childrenFields)
     }))
@@ -35,65 +30,65 @@ module.exports = class Populator {
     return documents
   }
 
-  static explainPopulate(model, documents, ...populateFields) {
+  static explainPopulate(model: mongoose.Model<any>, documents: any, ...populateFields: any[]) {
     if (!(documents instanceof Array)) documents = [documents]
     if (populateFields[0] instanceof Array) [populateFields] = populateFields
     const fields = this.checkFields(populateFields)
 
     const rootFields = fields.root
 
-    return _.flatten(rootFields.map(rootField => {
+    return _.flatten(rootFields.map((rootField: string): Promise<any> => {
       const childrenFields = fields.children(rootField)
       return this.explainPopulateField(model, documents, rootField, childrenFields)
     }))
   }
 
-  static async populateField(model, documents, field, childrenFields) {
+  static async populateField(model: mongoose.Model<any>, documents: any, field: string, childrenFields: Fields) {
     const _field = Association.cacheKey(field)
     const association = model.associate(field)
     const results = await association.findFor(documents).populateAssociation(childrenFields)
-    const enumerateMethod = association.associationType === 'hasMany' ? 'groupBy' : 'keyBy'
+    const enumerateMethod = association.associationType === 'hasMany' ? _.groupBy : _.keyBy
     const { localField } = association
     let { foreignField } = association
     if (association.through) {
-      foreignField = document => document[association.throughAsAssociation._with][foreignField]
+      foreignField = (document: any) => document[association.throughAsAssociation._with][foreignField]
     }
-    const indexedResults = _[enumerateMethod](results, foreignField)
-    documents.forEach(document => {
+    const indexedResults = enumerateMethod(results, foreignField)
+    documents.forEach((document: any) => {
       document[_field] = indexedResults[document[localField]]
     })
     return documents
   }
 
-  static explainPopulateField(model, documents, field, childrenFields) {
+  static explainPopulateField(model: mongoose.Model<any>, documents: any, field: string, childrenFields: Fields) {
     const association = model.associate(field)
     return association.findFor(documents).populateAssociation(childrenFields)._explain()
   }
 
-  static prePopulateAggregate(aggregate, ...populateFields) {
+  static prePopulateAggregate(aggregate: mongoose.Aggregate<any>, ...populateFields: any[]) {
     const fields = this.checkFields(populateFields)
 
     const rootFields = fields.root
     const model = aggregate._model
-    rootFields.forEach(rootField => {
+    rootFields.forEach((rootField: string) => {
       const childrenFields = fields.children(rootField)
       const association = model.associate(rootField)
       association.aggregateTo(aggregate)
       if (childrenFields.length) {
-        const options = {}
+        const options: any = {}
         options[rootField] = childrenFields
         aggregate.populateAssociation(options)
       }
     })
   }
 
-  static async populateAggregate(model, documents, populateOptions) {
+  static async populateAggregate(model: mongoose.Model<any>, documents: any, populateOptions: any) {
     const populateFields = Object.keys(populateOptions)
-    const promises = []
+    const promises: Promise<any>[] = []
     populateFields.forEach(field => {
       if (field !== '_fields') {
         const _field = Association.cacheKey(field)
-        const nestedDocuments = _.compact(_.flatten(documents.map(document => document[_field])))
+        const nestedDocuments: any[] = _.compact(_.flatten(documents.map((document: any) => document[_field])))
         if (nestedDocuments.length) {
           promises.push(this.populate(
             nestedDocuments[0].constructor,
@@ -107,8 +102,8 @@ module.exports = class Populator {
     return documents
   }
 
-  static explainPopulateAggregate(model, documents, populateOptions) {
-    let explain = []
+  static explainPopulateAggregate(model: mongoose.Model<any>, documents: any, populateOptions: any) {
+    let explain: any[] = []
     Object.keys(populateOptions).forEach(field => {
       if (field !== '_fields') {
         const association = model.associate(field)
@@ -123,7 +118,7 @@ module.exports = class Populator {
     return explain
   }
 
-  static queryConditionToAggregateMatch(conditions) {
+  static queryConditionToAggregateMatch(conditions: any) {
     Object.keys(conditions).forEach(key => {
       if (conditions[key] instanceof Array) {
         conditions[key] = { $in: conditions[key] }
@@ -132,16 +127,16 @@ module.exports = class Populator {
     return conditions
   }
 
-  static aggregateFromQuery(query, fields) {
+  static aggregateFromQuery(query: mongoose.DocumentQuery<any, any>, fields: any) {
     const aggregate = query.model.aggregate()
       .match(this.queryConditionToAggregateMatch(query._conditions))
     if (query.op === 'findOne') aggregate.limit(1).singular()
-    fields.root.forEach(field => {
+    fields.root.forEach((field: string) => {
       const association = query.model.associate(field)
       association.aggregateTo(aggregate)
       const children = fields.children(field)
       if (children.length) {
-        const options = {}
+        const options: any = {}
         options[field] = children
         aggregate.populateAssociation(options)
       }

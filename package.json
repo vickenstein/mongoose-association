@@ -1,11 +1,12 @@
 {
   "name": "mongoose-association",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "A cleaner and faster way to setup mongoose populate with virtual field",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "types/index.d.ts",
   "scripts": {
-    "test": "NODE_PATH=. mocha --recursive --exit",
-    "lint": "node_modules/.bin/eslint src index.js"
+    "test": "gulp ts:compile && NODE_PATH=. mocha --recursive --exit",
+    "lint": "node_modules/.bin/tslint --project tsconfig.json"
   },
   "repository": {
     "type": "git",
@@ -25,12 +26,23 @@
   },
   "homepage": "https://github.com/vickenstein/mongoose-association#readme",
   "devDependencies": {
+    "@types/inflection": "^1.5.28",
+    "@types/lodash": "^4.14.116",
+    "@types/mongodb": "^3.1.3",
+    "@types/mongoose": "^5.2.3",
     "benchmark": "^2.1.4",
     "chai": "^4.1.2",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^13.0.0",
     "eslint-plugin-import": "^2.13.0",
-    "mocha": "^5.2.0"
+    "gulp": "^4.0.0",
+    "gulp-clean": "^0.4.0",
+    "gulp-shell": "^0.6.5",
+    "gulp-typescript": "^5.0.0-alpha.3",
+    "mocha": "^5.2.0",
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.9.2",
+    "typescript": "^3.0.1"
   },
   "dependencies": {
     "inflection": "^1.12.0",

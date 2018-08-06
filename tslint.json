@@ -1,0 +1,9 @@
+{
+  "extends": "tslint-config-airbnb",
+  "rules": {
+    "semicolon": [true, "never"],
+    "no-this-assignment": [true, {
+      "allow-destructuring": true
+    }]
+  }
+}

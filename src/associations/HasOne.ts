@@ -1,8 +1,9 @@
-const Has = require('./Has')
+import { Has } from './Has'
 
-module.exports = class HasOne extends Has {
+export class HasOne extends Has {
+
   static get query() {
-    return HasOne.findOne
+    return Has.findOne
   }
 
   get associationType() {

@@ -5,7 +5,7 @@ mongoose.set('debug', function (collection, method, query, doc, options) {
   mongoose.requestCount++
 })
 
-require('index')(mongoose)
+require('dist/index')(mongoose)
 
 const connect = require('test/helpers/connect')
 const disconnect = require('test/helpers/disconnect')

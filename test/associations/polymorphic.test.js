@@ -1,7 +1,7 @@
 require('test/specHelper')
 const { assert } = require('chai')
 const mongoose = require('mongoose')
-const Polymorphic = require('src/associations/Polymorphic')
+const { Polymorphic } = require('dist/associations/Polymorphic')
 const drop = require('test/helpers/drop')
 
 const testSchema = new mongoose.Schema

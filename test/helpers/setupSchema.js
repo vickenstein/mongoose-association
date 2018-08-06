@@ -5,7 +5,11 @@ const riderSchema = new Schema()
 riderSchema.belongsTo('Bike').index(1, { sparse: true })
 riderSchema.belongsTo('Helmet')
 
-const bikeSchema = new Schema()
+const bikeSchema = new Schema({
+  color: {
+    type: String
+  }
+})
 bikeSchema.hasOne('Rider')
 bikeSchema.hasOne('Helmet', {
   through: 'Rider'
@@ -62,9 +66,13 @@ const vehicleAssociation = assemblySchema.polymorphic(['Bike', 'Car'], {
   as: 'vehicle'
 })
 const partAssociation = assemblySchema.belongsTo('Part')
-assemblySchema.indexAssociations([vehicleAssociation, 1], [partAssociation, 1], { unique: true })
+assemblySchema
 
-const partSchema = new Schema()
+const partSchema = new Schema({
+  color: {
+    type: String
+  }
+})
 partSchema.hasMany('Assembly')
 partSchema.hasMany('Bike', {
   through: 'Assembly',

@@ -1,6 +1,6 @@
 require('test/specHelper')
 const { assert } = require('chai')
-const Associations = require('src/Associations')
+const { Associations } = require('dist/Associations')
 const mongoose = require('mongoose')
 
 describe("Create an holder for all associations for mongoose", () => {

@@ -1,21 +1,23 @@
-const mongoose = require('mongoose')
-const Association = require('./Association')
+import * as mongoose from 'mongoose'
+import { Association, IOptions, IAggregateOptions } from './Association'
 
 const OPTIONS = {
   foreignModelNames: 'name of the models this belongsTo polymorphically',
   localField: 'name of the property to store the reference id',
-  typeField: 'name of the property to store the reference type'
+  typeField: 'name of the property to store the reference type',
 }
 
-module.exports = class Polymorphic extends Association {
+export class Polymorphic extends Association {
   static get options() {
     return Object.keys(OPTIONS).concat(Association.options)
   }
 
-  constructor(options) {
-    if (!options.foreignModelNames || !options.foreignModelNames.length) throw "Can't create a polymorphic association without specifying any foreignModelNames"
-    if (!options.as) throw "Can't create a polymorphic association without 'as' parameter"
-    return super(...arguments)
+  constructor(options: IOptions, schema: mongoose.Schema) {
+    if (!options.foreignModelNames || !options.foreignModelNames.length) {
+      throw 'Can\'t create a polymorphic association without specifying any foreignModelNames'
+    }
+    if (!options.as) throw 'Can\'t create a polymorphic association without \'as\' parameter'
+    super(options, schema)
   }
 
   get associationType() {
@@ -26,7 +28,7 @@ module.exports = class Polymorphic extends Association {
     return this.define('typeField', `${this.localField}Type`)
   }
 
-  findFor(document) {
+  findFor(document: any) {
     if (document instanceof Array) {
       return this.findManyFor(document)
     }
@@ -34,51 +36,53 @@ module.exports = class Polymorphic extends Association {
     return Polymorphic.findOne({
       modelName: document[typeField],
       localField: '_id',
-      localFieldValue: document[localField]
+      localFieldValue: document[localField],
     })
   }
 
-  findManyFor(documents) {
+  findManyFor(documents: any[]) {
     return Polymorphic.find({
       modelName: documents[0][this.typeField],
       localField: '_id',
-      localFieldValue: documents.map(document => document[this.localField])
+      localFieldValue: documents.map(document => document[this.localField]),
     })
   }
 
-  aggregateMatch(options) {
+  aggregateMatch(options: IAggregateOptions) {
     const $match = super.aggregateMatch(options)
     $match[this.typeField] = options.documents ? options.documents[0][this.typeField] : options.as
     return $match
   }
 
-  aggregateLookUp(aggregate, options) {
+  aggregateLookUp(aggregate: mongoose.Aggregate<any>, options: IAggregateOptions) {
     const foreignModel = mongoose.model(
       options.documents
         ? options.documents[0][this.typeField]
-        : options.as
+        : options.as,
     )
     const foreignModelCollectionName = foreignModel.collection.name
     aggregate.lookup({
       from: foreignModelCollectionName,
       let: { localField: this.$localField },
       pipeline: [{ $match: { $expr: { $eq: ['$$localField', this.$foreignField] } } }],
-      as: this.as
+      as: this.as,
     })
 
-    if (options.hydrate !== false) {
-      const hydrateOptions = { model: this.model }
+    if (options.hydrate) {
+      const hydrateOptions: any = { model: this.model }
       hydrateOptions[this.as] = { model: foreignModel }
       aggregate.hydrateAssociation(hydrateOptions)
     }
   }
 
-  aggregate(options = {}) {
-    if (!options.documents && !options.as) throw 'polymorphic aggregation requires an documents or option { as }'
+  aggregate(options: IAggregateOptions = {}) {
+    if (!options.documents && !options.as) {
+      throw 'polymorphic aggregation requires an documents or option { as }'
+    }
     return super.aggregate(options)
   }
 
-  index(order, options) {
+  index(order: number, options: object) {
     this.schema.indexAssociations([this, order], options)
     return this
   }
