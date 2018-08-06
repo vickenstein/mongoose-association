@@ -27,4 +27,5 @@ declare module 'mongoose' {
         explain(): void;
     }
 }
+export declare function mongooseAssociation(mongoose: any): void;
 //# sourceMappingURL=index.d.ts.map

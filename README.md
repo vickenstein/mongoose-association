@@ -8,7 +8,8 @@ npm install mongoose-association
 
 ```javascript
   const mongoose = require('mongoose')
-  require('mongoose-association')(mongoose)
+  const { mongooseAssociation } = require('mongoose-association')
+  mongooseAssociation(mongoose)
 ```
 
 ### Associations

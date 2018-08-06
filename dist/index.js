@@ -217,7 +217,7 @@ const patchModel = (mongoose) => {
         return currentModel;
     };
 };
-module.exports = function mongooseAssociation(mongoose) {
+function mongooseAssociation(mongoose) {
     // apply cirular reference to schema to fetch it's model during runtime
     patchModel(mongoose);
     // apply helper methods to mongoose schema for generating associations
@@ -229,4 +229,5 @@ module.exports = function mongooseAssociation(mongoose) {
     // using mongoose plugin to apply mongoose model
     // static methods and instance methods for populating
     mongoose.plugin(plugin);
-};
+}
+exports.mongooseAssociation = mongooseAssociation;

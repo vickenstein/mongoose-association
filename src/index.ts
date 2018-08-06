@@ -273,7 +273,7 @@ const patchModel = (mongoose: any) => {
   }
 }
 
-module.exports = function mongooseAssociation(mongoose: any) {
+export function mongooseAssociation(mongoose: any) {
   // apply cirular reference to schema to fetch it's model during runtime
   patchModel(mongoose)
 
