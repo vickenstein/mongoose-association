@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "declaration": true,
+    "declarationDir": "dist",
+    "module": "commonjs",
+    "target": "es6"
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const BelongsTo_1 = require("./BelongsTo");
+exports.BelongsTo = BelongsTo_1.BelongsTo;
+const Polymorphic_1 = require("./Polymorphic");
+exports.Polymorphic = Polymorphic_1.Polymorphic;
+const HasOne_1 = require("./HasOne");
+exports.HasOne = HasOne_1.HasOne;
+const HasMany_1 = require("./HasMany");
+exports.HasMany = HasMany_1.HasMany;

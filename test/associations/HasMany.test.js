@@ -3,8 +3,8 @@ const { assert } = require('chai')
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Types.ObjectId
 
-const HasMany = require('src/associations/HasMany')
-const Collection = require('src/Collection')
+const { HasMany } = require('dist/associations/HasMany')
+const { Collection } = require('dist/Collection')
 const drop = require('test/helpers/drop')
 
 const testSchema = new mongoose.Schema

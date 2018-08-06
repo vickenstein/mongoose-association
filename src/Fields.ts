@@ -1,14 +1,16 @@
-const _ = require('lodash')
+import * as _ from 'lodash'
 
-module.exports = class Fields {
-  constructor(options, ...fields) {
+export class Fields {
+  private fields: string[]
+
+  constructor(options?: object, ...fields: string[]) {
     if (options && !(options instanceof Object)) fields.unshift(options)
     this.fields = Fields.reduce(...fields)
   }
 
-  static reduce(...fields) {
-    const reducedFields = []
-    fields.forEach(field => {
+  static reduce(...fields: string[]): string[] {
+    const reducedFields: string[] = []
+    fields.forEach((field) => {
       let match = 0
       const regexp = new RegExp(`^${field}`)
       for (let i = 0; i < fields.length; i += 1) {
@@ -30,9 +32,9 @@ module.exports = class Fields {
     return _.uniq(this.fields.map(field => field.split('.')[0]))
   }
 
-  children(matchField) {
+  children(matchField: string) {
     const fields = new Fields()
-    this.fields.forEach(field => {
+    this.fields.forEach((field) => {
       const splitField = field.split('.')
       if (splitField.length > 1 && splitField[0] === matchField) {
         fields.fields.push(splitField.slice(1).join('.'))

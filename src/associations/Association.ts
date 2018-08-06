@@ -1,65 +1,121 @@
-const _ = require('lodash')
-const mongoose = require('mongoose')
-const inflection = require('inflection')
+import * as _ from 'lodash'
+import * as mongoose from 'mongoose'
+import * as inflection from 'inflection'
 
 const { ObjectId } = mongoose.Types
 const OPTIONS = {
   foreignModelName: 'name of the model this belongsTo',
-  as: 'name of the property to store the reference object'
+  as: 'name of the property to store the reference object',
 }
 
-module.exports = class Association {
-  static findOne({ modelName, localField, localFieldValue, typeField, type }) {
-    const query = {}
+export interface IOptions {
+  foreignModelName?: string,
+  foreignModelNames?: string,
+  as?: string,
+  localField?: string,
+  with?: string,
+  through?: string,
+  throughAs?: string,
+  throughWith?: string,
+  typeField?: string,
+}
+
+export interface IAggregateOptions {
+  documents?: any,
+  $match?: object,
+  hydrate?: boolean,
+  as?: string
+}
+
+export class Association {
+
+  schema: mongoose.Schema
+  foreignModelName: string
+  through: string
+  typeField: string
+  withAssociation: Association
+  throughAssociation: Association
+  throughAsAssociation: Association
+  throughModel: mongoose.Model<any>
+  isReference: boolean
+
+  ['constructor']: typeof Association
+
+  static findOne({ modelName, localField, localFieldValue, typeField, type }: {
+    modelName: string,
+    localField: string,
+    localFieldValue: any,
+    typeField?: string,
+    type?: string,
+  }): mongoose.DocumentQuery<any, any> {
+    const query: any = {}
     query[localField] = localFieldValue
     if (typeField && type) query[typeField] = type
     return mongoose.model(modelName).findOne(query)
   }
 
-  static find({ modelName, localField, localFieldValue, typeField, type }) {
-    const query = {}
+  static find({ modelName, localField, localFieldValue, typeField, type }: {
+    modelName: string,
+    localField: string,
+    localFieldValue: string[],
+    typeField?: string,
+    type?: string,
+  }): mongoose.DocumentQuery<any, any> {
+    const query: any = {}
     query[localField] = localFieldValue
     if (typeField && type) query[typeField] = type
     return mongoose.model(modelName).find(query)
   }
 
-  constructor(options, schema) {
+  constructor(options: IOptions, schema: mongoose.Schema) {
     if (!schema) throw 'missing schema for association'
     this.options = options
     this.schema = schema
     return this
   }
 
-  static get options() {
+  static get options(): string[] {
     return Object.keys(OPTIONS)
   }
 
-  static cacheKey(string) {
+  static cacheKey(string: string) {
     return `_${string}`
   }
 
-  static variablize(string) {
+  static variablize(string: string) {
     return `$${string}`
   }
 
-  static idlize(string) {
+  static idlize(string: string) {
     return `${string}Id`
   }
 
-  static decapitalize(string) {
+  static decapitalize(string: string) {
     return `${string.charAt(0).toLowerCase()}${string.substr(1)}`
   }
 
-  set options(options) {
-    this.constructor.options.forEach(option => {
+  static get isReference() {
+    return false
+  }
+
+  static get query() {
+    return Association.findOne
+  }
+
+  set options(options: any) {
+    this.constructor.options.forEach((option: string) => {
       const value = options[option]
       if (value) this.define(option, options[option])
     })
   }
 
-  define(property, value) {
+  define(property: string, value: any) {
     Object.defineProperty(this, property, { value })
     return value
+  }
+
+  get associationType(): string {
+    return ''
   }
 
   get model() {
@@ -130,22 +186,30 @@ module.exports = class Association {
     return this.define('$foreignField', Association.variablize(this.foreignField))
   }
 
-  generateAggregateOnModel() {
+  findFor(document: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any> {
+    return
+  }
+
+  findForMany(documents: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any> {
+    return
+  }
+
+  generateAggregateOnModel(options?: IAggregateOptions) {
     const aggregate = this.model.aggregate()
     aggregate.association = this
     return aggregate
   }
 
-  aggregateMatch(options) {
-    const $match = {}
+  aggregateMatch(options: IAggregateOptions) {
+    const $match: any = {}
     if (options.documents) {
-      $match._id = { $in: options.documents.map(document => ObjectId(document._id)) }
+      $match._id = { $in: options.documents.map((document: any) => ObjectId(document._id)) }
     }
     if (options.$match) _.merge($match, options.$match)
     return $match
   }
 
-  aggregate(options = {}) {
+  aggregate(options: IAggregateOptions = {}) {
     if (options.documents && !(options.documents instanceof Array)) {
       options.documents = [options.documents]
     }
@@ -155,28 +219,28 @@ module.exports = class Association {
     return this.aggregateTo(aggregate, options)
   }
 
-  aggregateTo(aggregate, options = {}) {
+  aggregateTo(aggregate: mongoose.Aggregate<any>, options?: IAggregateOptions) {
     this.aggregateLookUp(aggregate, options)
     if (this.associationType !== 'hasMany' && !this.through) aggregate.unwind(this.$as)
     return aggregate
   }
 
-  aggregateLookUpMatch() {
+  aggregateLookUpMatch(options?: IAggregateOptions) {
     return { $expr: { $eq: ['$$localField', this.$foreignField] } }
   }
 
-  aggregateLookUp(aggregate, options) {
+  aggregateLookUp(aggregate: mongoose.Aggregate<any>, options: IAggregateOptions = {}) {
     const $match = this.aggregateLookUpMatch(options)
 
     aggregate.lookup({
       from: this.foreignCollectionName,
       let: { localField: this.$localField },
       pipeline: [{ $match }],
-      as: this.as
+      as: this.as,
     })
 
-    if (options.hydrate !== false) {
-      const hydrateOptions = { model: this.model }
+    if (options.hydrate) {
+      const hydrateOptions: any = { model: this.model }
       hydrateOptions[this.as] = { model: this.foreignModel }
       aggregate.hydrateAssociation(hydrateOptions)
     }

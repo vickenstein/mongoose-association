@@ -1,55 +1,68 @@
-/* eslint no-console: 0 */
-/* eslint no-param-reassign: 0 */
-/* eslint no-underscore-dangle: [2, {
-  "allow": [
-    "_exec",
-    "_explain",
-    "_populateAssociation",
-    "_hydrateAssociation",
-    "_invertAssociation",
-    "_singular",
-    "_conditions",
-    "_fields",
-    "_model",
-    "_pipeline",
-    "_collectAssociation"
-  ] }] */
-
-const _ = require('lodash')
-const inflection = require('inflection')
-const util = require('util')
-const SchemaMixin = require('./src/SchemaMixin')
-const Populator = require('./src/Populator')
-const Hydrator = require('./src/Hydrator')
-const Fields = require('./src/Fields')
-const Collection = require('./src/Collection')
+import * as _ from 'lodash'
+import * as mongoose from 'mongoose'
+import * as inflection from 'inflection'
+import * as util from 'util'
+import { Association } from './associations/Association'
+import { SchemaMixin } from './SchemaMixin'
+import { Populator } from './Populator'
+import { Hydrator } from './Hydrator'
+import { Fields } from './Fields'
+import { Collection } from './Collection'
 
 const POPULATABLE_QUERY = ['find', 'findOne']
 
-const plugin = Schema => {
-  Schema.statics.associate = function associate(as) {
+declare module 'mongoose' {
+  export interface Schema {
+    model: mongoose.Model<any>
+  }
+  export interface Model<T> {
+    associate(as: string): Association
+  }
+  export interface DocumentQuery<T, DocType extends Document> {
+    populateAssociation(options: any): DocumentQuery<any, any>
+    collectAssociation(options: any): DocumentQuery<any, any>
+    model: mongoose.Model<any>
+    _model: mongoose.Model<any>
+    _conditions: any
+    op: string
+    _explain(): any
+    explain(): void
+  }
+  export interface Aggregate<T> {
+    hydrateAssociation(options: any): Aggregate<T>
+    populateAssociation(options: any): Aggregate<T>
+    collectAssociation(options: any): Aggregate<T>
+    singular(): Aggregate<T>
+    _model: mongoose.Model<any>
+    _explain(): any
+    explain(): void
+  }
+}
+
+const plugin = (Schema: mongoose.Schema) => {
+  Schema.statics.associate = function associate(as: string) {
     return this.schema.associate(as)
   }
 
-  Schema.methods.populateAssociation = function populateAssociation(...fields) {
+  Schema.methods.populateAssociation = function populateAssociation(...fields: string[]) {
     return Populator.populate(this.constructor, this, fields)
   }
 
-  Schema.statics.populateAssociation = function populateAssociation(documents, ...fields) {
+  Schema.statics.populateAssociation = function populateAssociation(documents: any, ...fields: string[]) {
     return Populator.populate(this, documents, fields)
   }
 
-  Schema.methods.fetch = function fetch(association) {
+  Schema.methods.fetch = function fetch(association: Association) {
     const methodName = association instanceof Object ? association.$fetch : `fetch${inflection.capitalize(association)}`
     return this[methodName]()
   }
 
-  Schema.methods.unset = function unset(association) {
+  Schema.methods.unset = function unset(association: Association) {
     if (association) {
       const methodName = association instanceof Object ? association.$unset : `unset${inflection.capitalize(association)}`
       this[methodName]()
     } else {
-      this.constructor.schema.associations.forEach(nestedAssociation => {
+      this.constructor.schema.associations.forEach((nestedAssociation: Association) => {
         this.unset(nestedAssociation)
       })
     }
@@ -57,11 +70,11 @@ const plugin = Schema => {
   }
 
   Schema.statics._explain = function _explain() {
-    const associations = {
+    const associations: any = {
       _id: `${this.modelName}._id`,
       modelName: this.modelName
     }
-    this.schema.associations.forEach(association => {
+    this.schema.associations.forEach((association: Association) => {
       if (!association.isReference) {
         associations[association.localField] = `${this.modelName}.${association.localField}`
       }
@@ -74,22 +87,22 @@ const plugin = Schema => {
   }
 }
 
-const patchQueryPrototype = Query => {
+const patchQueryPrototype = (Query: any) => {
   const _exec = Query.prototype.exec
 
   if (Query.prototype.populateAssociation) return
 
-  Query.prototype.populateAssociation = function populateAssociation(...fields) {
+  Query.prototype.populateAssociation = function populateAssociation(...fields: string[]) {
     this._populateAssociation = fields
     return this
   }
 
-  Query.prototype.collectAssociation = function collectAssociation(options) {
+  Query.prototype.collectAssociation = function collectAssociation(options: any) {
     this._collectAssociation = options
     return this
   }
 
-  Query.prototype.exec = function exec(options, callback) {
+  Query.prototype.exec = function exec(options: any, callback?: (err: any, res: any) => void) {
     const populateAssociation = this._populateAssociation
       && Populator.checkFields(this._populateAssociation)
     const collectAssociation = this._collectAssociation
@@ -101,10 +114,10 @@ const patchQueryPrototype = Query => {
     return new Promise((resolve, reject) => {
       if (populateAssociation && populateAssociation.root.length) {
         const aggregate = Populator.aggregateFromQuery(this, populateAssociation)
-        aggregate.then(documents => resolve(documents))
-          .catch(error => reject(error))
+        aggregate.then((documents: any) => resolve(documents))
+          .catch((error: any) => reject(error))
       } else {
-        _exec.call(this, options, (error, documents) => {
+        _exec.call(this, options, (error: any, documents: any) => {
           if (error) return reject(error)
           if (collectAssociation) documents = Collection.collect(documents, collectAssociation)
           if (!documents) return resolve(documents)
@@ -133,12 +146,12 @@ const patchQueryPrototype = Query => {
   }
 }
 
-const patchAggregatePrototype = Aggregate => {
+const patchAggregatePrototype = (Aggregate: any) => {
   const _exec = Aggregate.prototype.exec
 
   if (Aggregate.prototype.hydrateAssociation) return
 
-  Aggregate.prototype.populateAssociation = function populateAssociation(...options) {
+  Aggregate.prototype.populateAssociation = function populateAssociation(...options: any[]) {
     if (options.length > 1 || !(options[0] instanceof Object)) {
       this._populateAssociation = _.merge(
         this._populateAssociation || {},
@@ -158,7 +171,8 @@ const patchAggregatePrototype = Aggregate => {
     return this
   }
 
-  Aggregate.prototype.hydrateAssociation = function hydrateAssociation(options) {
+  Aggregate.prototype.hydrateAssociation = function hydrateAssociation(options: any) {
+    console.log(options, "Aggregate, hydrate")
     if (options.reset) {
       delete options.reset
       this._hydrateAssociation = options
@@ -168,7 +182,7 @@ const patchAggregatePrototype = Aggregate => {
     return this
   }
 
-  Aggregate.prototype.invertAssociation = function invertAssociation(from, to) {
+  Aggregate.prototype.invertAssociation = function invertAssociation(from: string, to: string) {
     if (from && to) {
       this._invertAssociation = {
         from,
@@ -183,12 +197,12 @@ const patchAggregatePrototype = Aggregate => {
     return this
   }
 
-  Aggregate.prototype.collectAssociation = function collectAssociation(options) {
+  Aggregate.prototype.collectAssociation = function collectAssociation(options: any) {
     this._collectAssociation = options
     return this
   }
 
-  Aggregate.prototype.exec = function exec(callback) {
+  Aggregate.prototype.exec = function exec(callback?: (err: any, res: any) => void) {
     const populateAssociation = this._populateAssociation
     const hydrateAssociation = this._hydrateAssociation
     const invertAssociation = this._invertAssociation
@@ -205,11 +219,11 @@ const patchAggregatePrototype = Aggregate => {
     }
 
     return new Promise((resolve, reject) => {
-      _exec.call(this, (error, documents) => {
+      _exec.call(this, (error: any, documents: any) => {
         if (error) return reject(error)
         if (!documents) return resolve(documents)
         if (invertAssociation) {
-          documents = documents.map(document => {
+          documents = documents.map((document: any) => {
             const nestedDcoument = document[invertAssociation.to]
             delete document[invertAssociation.to]
             nestedDcoument[invertAssociation.from] = document
@@ -251,16 +265,16 @@ const patchAggregatePrototype = Aggregate => {
   }
 }
 
-const patchModel = mongoose => {
+const patchModel = (mongoose: any) => {
   const modelMethod = mongoose.model
-  mongoose.model = function model(name, schema, collection, skipInit) {
+  mongoose.model = function model(name: string, schema: mongoose.Schema, collection?: string, skipInit?: boolean) {
     const currentModel = modelMethod.apply(this, [name, schema, collection, skipInit])
     if (schema) schema.model = currentModel
     return currentModel
   }
 }
 
-module.exports = function mongooseAssociation(mongoose) {
+module.exports = function mongooseAssociation(mongoose: any) {
   // apply cirular reference to schema to fetch it's model during runtime
   patchModel(mongoose)
 

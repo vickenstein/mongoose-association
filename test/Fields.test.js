@@ -1,5 +1,5 @@
 const { assert } = require('chai')
-const Fields = require('src/Fields')
+const { Fields } = require('dist/Fields')
 
 describe("assign association class", () => {
   describe("static #reduce", () => {
