@@ -1,8 +1,9 @@
 {
   "name": "mongoose-association",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "A cleaner and faster way to setup mongoose populate with virtual field",
   "main": "dist/index.js",
+  "types": "types/index.d.ts",
   "scripts": {
     "test": "gulp ts:compile && NODE_PATH=. mocha --recursive --exit",
     "lint": "node_modules/.bin/tslint --project tsconfig.json"
