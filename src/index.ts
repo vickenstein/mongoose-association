@@ -2,7 +2,7 @@ import * as _ from 'lodash'
 import * as mongoose from 'mongoose'
 import * as inflection from 'inflection'
 import * as util from 'util'
-import { Association } from './associations/Association'
+import { Association, IOptions } from './associations/Association'
 import { SchemaMixin } from './SchemaMixin'
 import { Populator } from './Populator'
 import { Hydrator } from './Hydrator'
@@ -14,6 +14,11 @@ const POPULATABLE_QUERY = ['find', 'findOne']
 declare module 'mongoose' {
   export interface Schema {
     model: mongoose.Model<any>
+    belongsTo(foreignModelName: string, options?: IOptions, schemaOptions?: any): Association
+    polymorphic(foreignModelNames: string[], options?: IOptions, schemaOptions?: any): Association
+    hasOne(foreignModelName: string, options?: IOptions): Association
+    hasMany(foreignModelName: string, options?: IOptions): Association
+    indexAssociations(...associations: any[]): SchemaMixin
   }
   export interface Model<T> {
     associate(as: string): Association

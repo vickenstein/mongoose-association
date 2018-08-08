@@ -1,5 +1,6 @@
 import * as _ from 'lodash'
 import * as mongoose from 'mongoose'
+import { SchemaMixin } from './SchemaMixin'
 import { Association } from './associations/Association'
 import * as associations from './associations/index'
 
@@ -20,7 +21,7 @@ const ASSOCIATIONS: IASSOCIATIONS = {
 
 export class Associations {
 
-  schema: mongoose.Schema
+  schema: SchemaMixin
   asIndexed: IasIndex
 
   static get types() {
@@ -31,7 +32,7 @@ export class Associations {
     return ASSOCIATIONS[type]
   }
 
-  constructor(schema: mongoose.Schema) {
+  constructor(schema: SchemaMixin) {
     this.schema = schema
     this.asIndexed = {}
   }

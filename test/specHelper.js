@@ -6,7 +6,6 @@ mongoose.set('debug', function (collection, method, query, doc, options) {
 })
 
 const { mongooseAssociation } = require('dist/index')
-console.log(mongooseAssociation, "WTF")
 mongooseAssociation(mongoose)
 
 const connect = require('test/helpers/connect')

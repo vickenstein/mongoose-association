@@ -1,11 +1,6 @@
 import * as mongoose from 'mongoose';
 import { Association, IOptions } from './associations/Association';
 import { Associations } from './Associations';
-declare module "mongoose" {
-    interface Schema {
-        indexAssociations(...associations: any[]): Schema;
-    }
-}
 export declare class SchemaMixin extends mongoose.Schema {
     associations: Associations;
     associate(as: string): Association;

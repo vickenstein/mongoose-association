@@ -1,14 +1,15 @@
 import * as mongoose from 'mongoose';
+import { SchemaMixin } from './SchemaMixin';
 import { Association } from './associations/Association';
 interface IasIndex {
     [as: string]: Association;
 }
 export declare class Associations {
-    schema: mongoose.Schema;
+    schema: SchemaMixin;
     asIndexed: IasIndex;
     static readonly types: string[];
     static classOf(type: string): any;
-    constructor(schema: mongoose.Schema);
+    constructor(schema: SchemaMixin);
     associate(as: string): Association;
     readonly model: mongoose.Model<any>;
     readonly modelName: string;

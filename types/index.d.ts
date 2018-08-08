@@ -1,8 +1,14 @@
 import * as mongoose from 'mongoose';
-import { Association } from './associations/Association';
+import { Association, IOptions } from './associations/Association';
+import { SchemaMixin } from './SchemaMixin';
 declare module 'mongoose' {
     interface Schema {
         model: mongoose.Model<any>;
+        belongsTo(foreignModelName: string, options?: IOptions, schemaOptions?: any): Association;
+        polymorphic(foreignModelNames: string[], options?: IOptions, schemaOptions?: any): Association;
+        hasOne(foreignModelName: string, options?: IOptions): Association;
+        hasMany(foreignModelName: string, options?: IOptions): Association;
+        indexAssociations(...associations: any[]): SchemaMixin;
     }
     interface Model<T> {
         associate(as: string): Association;

@@ -6,12 +6,6 @@ import { Collection } from './Collection'
 
 const { ObjectId } = mongoose.Schema.Types
 
-declare module "mongoose" {
-  export interface Schema {
-    indexAssociations(...associations: any[]): Schema
-  }
-}
-
 export class SchemaMixin extends mongoose.Schema {
 
   associations: Associations
