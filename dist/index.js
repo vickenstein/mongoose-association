@@ -5,6 +5,7 @@ const inflection = require("inflection");
 const util = require("util");
 const SchemaMixin_1 = require("./SchemaMixin");
 const Populator_1 = require("./Populator");
+const AggregationMatcher_1 = require("./AggregationMatcher");
 const Hydrator_1 = require("./Hydrator");
 const Fields_1 = require("./Fields");
 const Collection_1 = require("./Collection");
@@ -206,6 +207,10 @@ const patchAggregatePrototype = (Aggregate) => {
     };
     Aggregate.prototype.explain = function explain() {
         console.log(util.inspect(this._explain(), { depth: 20 }));
+    };
+    Aggregate.prototype.where = function where(match) {
+        new AggregationMatcher_1.AggregationMatcher(this, match);
+        return this;
     };
 };
 const patchModel = (mongoose) => {

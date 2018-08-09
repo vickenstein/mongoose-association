@@ -1,7 +1,11 @@
 const mongoose = require('mongoose')
 const { Schema } = mongoose
 
-const riderSchema = new Schema()
+const riderSchema = new Schema({
+  age: {
+    type: Number
+  }
+})
 riderSchema.belongsTo('Bike').index(1, { sparse: true })
 riderSchema.belongsTo('Helmet')
 

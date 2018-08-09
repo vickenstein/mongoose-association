@@ -5,6 +5,7 @@ import * as util from 'util'
 import { Association, IOptions } from './associations/Association'
 import { SchemaMixin } from './SchemaMixin'
 import { Populator } from './Populator'
+import { AggregationMatcher } from './AggregationMatcher'
 import { Hydrator } from './Hydrator'
 import { Fields } from './Fields'
 import { Collection } from './Collection'
@@ -37,8 +38,10 @@ declare module 'mongoose' {
     hydrateAssociation(options: any): Aggregate<T>
     populateAssociation(options: any): Aggregate<T>
     collectAssociation(options: any): Aggregate<T>
+    where(options: any): Aggregate<T>
     singular(): Aggregate<T>
     _model: mongoose.Model<any>
+    _pipeline: any[]
     _explain(): any
     explain(): void
   }
@@ -266,6 +269,11 @@ const patchAggregatePrototype = (Aggregate: any) => {
 
   Aggregate.prototype.explain = function explain() {
     console.log(util.inspect(this._explain(), { depth: 20 }))
+  }
+
+  Aggregate.prototype.where = function where(match: any) {
+    new AggregationMatcher(this, match)
+    return this
   }
 }
 

@@ -27,8 +27,10 @@ declare module 'mongoose' {
         hydrateAssociation(options: any): Aggregate<T>;
         populateAssociation(options: any): Aggregate<T>;
         collectAssociation(options: any): Aggregate<T>;
+        where(options: any): Aggregate<T>;
         singular(): Aggregate<T>;
         _model: mongoose.Model<any>;
+        _pipeline: any[];
         _explain(): any;
         explain(): void;
     }
