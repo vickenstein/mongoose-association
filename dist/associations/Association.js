@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const mongoose = require("mongoose");
-const inflection = require("inflection");
 const { ObjectId } = mongoose.Types;
 const OPTIONS = {
     foreignModelName: 'name of the model this belongsTo',
@@ -44,6 +43,9 @@ class Association {
     }
     static decapitalize(string) {
         return `${string.charAt(0).toLowerCase()}${string.substr(1)}`;
+    }
+    static capitalize(string) {
+        return `${string.charAt(0).toUpperCase()}${string.substr(1)}`;
     }
     static get isReference() {
         return false;
@@ -90,10 +92,10 @@ class Association {
         return this.define('as', Association.decapitalize(this.foreignModelName));
     }
     get $fetch() {
-        return this.define('$fetch', `fetch${inflection.capitalize(this.as)}`);
+        return this.define('$fetch', `fetch${Association.capitalize(this.as)}`);
     }
     get $unset() {
-        return this.define('$unset', `unset${inflection.capitalize(this.as)}`);
+        return this.define('$unset', `unset${Association.capitalize(this.as)}`);
     }
     get _as() {
         return this.define('_as', Association.cacheKey(this.as));

@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
-const inflection = require("inflection");
 const util = require("util");
+const Association_1 = require("./associations/Association");
 const SchemaMixin_1 = require("./SchemaMixin");
 const Populator_1 = require("./Populator");
 const AggregationMatcher_1 = require("./AggregationMatcher");
@@ -21,12 +21,12 @@ const plugin = (Schema) => {
         return Populator_1.Populator.populate(this, documents, fields);
     };
     Schema.methods.fetch = function fetch(association) {
-        const methodName = association instanceof Object ? association.$fetch : `fetch${inflection.capitalize(association)}`;
+        const methodName = association instanceof Object ? association.$fetch : `fetch${Association_1.Association.capitalize(association)}`;
         return this[methodName]();
     };
     Schema.methods.unset = function unset(association) {
         if (association) {
-            const methodName = association instanceof Object ? association.$unset : `unset${inflection.capitalize(association)}`;
+            const methodName = association instanceof Object ? association.$unset : `unset${Association_1.Association.capitalize(association)}`;
             this[methodName]();
         }
         else {

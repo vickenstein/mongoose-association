@@ -47,6 +47,7 @@ export declare class Association {
     static variablize(string: string): string;
     static idlize(string: string): string;
     static decapitalize(string: string): string;
+    static capitalize(string: string): string;
     static readonly isReference: boolean;
     static readonly query: typeof Association.findOne;
     options: any;

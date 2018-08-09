@@ -94,6 +94,10 @@ export class Association {
     return `${string.charAt(0).toLowerCase()}${string.substr(1)}`
   }
 
+  static capitalize(string: string) {
+    return `${string.charAt(0).toUpperCase()}${string.substr(1)}`
+  }
+
   static get isReference() {
     return false
   }
@@ -151,11 +155,11 @@ export class Association {
   }
 
   get $fetch() {
-    return this.define('$fetch', `fetch${inflection.capitalize(this.as)}`)
+    return this.define('$fetch', `fetch${Association.capitalize(this.as)}`)
   }
 
   get $unset() {
-    return this.define('$unset', `unset${inflection.capitalize(this.as)}`)
+    return this.define('$unset', `unset${Association.capitalize(this.as)}`)
   }
 
   get _as() {

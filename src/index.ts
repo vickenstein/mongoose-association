@@ -60,14 +60,14 @@ const plugin = (Schema: mongoose.Schema) => {
     return Populator.populate(this, documents, fields)
   }
 
-  Schema.methods.fetch = function fetch(association: Association) {
-    const methodName = association instanceof Object ? association.$fetch : `fetch${inflection.capitalize(association)}`
+  Schema.methods.fetch = function fetch(association: Association | string) {
+    const methodName = association instanceof Object ? association.$fetch : `fetch${Association.capitalize(association)}`
     return this[methodName]()
   }
 
-  Schema.methods.unset = function unset(association: Association) {
+  Schema.methods.unset = function unset(association: Association | string) {
     if (association) {
-      const methodName = association instanceof Object ? association.$unset : `unset${inflection.capitalize(association)}`
+      const methodName = association instanceof Object ? association.$unset : `unset${Association.capitalize(association)}`
       this[methodName]()
     } else {
       this.constructor.schema.associations.forEach((nestedAssociation: Association) => {
