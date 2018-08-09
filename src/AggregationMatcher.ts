@@ -50,8 +50,9 @@ export class AggregationMatcher {
   }
 
   updateMatch(match: any) {
-    if (this.match) {
-      _.merge(this.match, match)
+    const localMatch = this.match
+    if (localMatch) {
+      _.merge(localMatch.$match, match)
     } else {
       this.pipeline.unshift({
         $match: match

@@ -41,8 +41,9 @@ class AggregationMatcher {
         }
     }
     updateMatch(match) {
-        if (this.match) {
-            _.merge(this.match, match);
+        const localMatch = this.match;
+        if (localMatch) {
+            _.merge(localMatch.$match, match);
         }
         else {
             this.pipeline.unshift({
