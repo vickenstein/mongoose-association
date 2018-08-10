@@ -14,6 +14,11 @@ class AggregationMatcher {
                 return step;
         }
     }
+    static lookups(pipeline) {
+        return pipeline.filter((step) => {
+            return step && step.$lookup;
+        });
+    }
     get pipeline() {
         return this.aggregate._pipeline;
     }

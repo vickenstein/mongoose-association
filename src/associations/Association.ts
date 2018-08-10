@@ -24,7 +24,8 @@ export interface IAggregateOptions {
   documents?: any,
   $match?: object,
   hydrate?: boolean,
-  as?: string
+  as?: string,
+  preserveNullAndEmptyArrays?: boolean
 }
 
 export class Association {
@@ -223,9 +224,15 @@ export class Association {
     return this.aggregateTo(aggregate, options)
   }
 
-  aggregateTo(aggregate: mongoose.Aggregate<any>, options?: IAggregateOptions) {
+  aggregateTo(aggregate: mongoose.Aggregate<any>, options: IAggregateOptions = {}) {
     this.aggregateLookUp(aggregate, options)
-    if (this.associationType !== 'hasMany' && !this.through) aggregate.unwind(this.$as)
+    const preserveNullAndEmptyArrays = !!options.preserveNullAndEmptyArrays
+    if (this.associationType !== 'hasMany' && !this.through) {
+      aggregate.unwind({
+        path: this.$as,
+        preserveNullAndEmptyArrays
+      })
+    }
     return aggregate
   }
 

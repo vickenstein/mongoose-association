@@ -19,6 +19,10 @@ bikeSchema.hasOne('Helmet', {
   through: 'Rider'
 })
 
+bikeSchema.softDeleteable({
+  deleter: 'Rider'
+})
+
 const helmetSchema = new Schema()
 helmetSchema.hasOne('Rider')
 helmetSchema.hasOne('Bike', {

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
+const mongoose = require("mongoose");
 const util = require("util");
 const Association_1 = require("./associations/Association");
 const SchemaMixin_1 = require("./SchemaMixin");
@@ -64,10 +65,24 @@ const patchQueryPrototype = (Query) => {
         this._collectAssociation = options;
         return this;
     };
+    Query.prototype.withDeleted = function withDeleted() {
+        this._withDeleted = true;
+        return this;
+    };
+    Query.prototype.checkDeleted = function checkDelete() {
+        if (this.schema.deleteField) {
+            const condition = {};
+            condition[this.schema.deleteField] = null;
+            this.where(condition);
+        }
+    };
     Query.prototype.exec = function exec(options, callback) {
         const populateAssociation = this._populateAssociation
             && Populator_1.Populator.checkFields(this._populateAssociation);
         const collectAssociation = this._collectAssociation;
+        const withDeleted = this._withDeleted;
+        if (!withDeleted)
+            this.checkDeleted();
         if (!populateAssociation && !collectAssociation)
             return _exec.call(this, options, callback);
         // _.includes(POPULATABLE_QUERY, this.op)not sure if all query type will work ok
@@ -93,6 +108,9 @@ const patchQueryPrototype = (Query) => {
         });
     };
     Query.prototype._explain = function _explain() {
+        const withDeleted = this._withDeleted;
+        if (!withDeleted)
+            this.checkDeleted();
         if (!this._populateAssociation)
             return [['query', this.model.modelName, this._conditions]];
         const fields = Populator_1.Populator.checkFields(this._populateAssociation);
@@ -148,20 +166,59 @@ const patchAggregatePrototype = (Aggregate) => {
         this._collectAssociation = options;
         return this;
     };
+    Aggregate.prototype.withDeleted = function withDeleted() {
+        this._withDeleted = true;
+        return this;
+    };
+    Aggregate.prototype.checkDeleted = function checkDelete() {
+        const model = this._model;
+        const schema = model.schema;
+        if (schema.deleteField) {
+            const localMatch = AggregationMatcher_1.AggregationMatcher.match(this._pipeline);
+            const match = {};
+            match[schema.deleteField] = null;
+            if (localMatch) {
+                _.merge(localMatch.$match, match);
+            }
+            else {
+                this._pipeline.unshift({
+                    $match: match
+                });
+            }
+        }
+        const lookups = AggregationMatcher_1.AggregationMatcher.lookups(this._pipeline);
+        lookups.forEach((lookup) => {
+            const foreignModel = _.find(mongoose.models, (model) => {
+                return model.collection.collectionName === lookup.$lookup.from;
+            });
+            if (foreignModel) {
+                if (foreignModel.schema.deleteField) {
+                    const localMatch = AggregationMatcher_1.AggregationMatcher.match(lookup.$lookup.pipeline);
+                    const match = {};
+                    match[foreignModel.schema.deleteField] = null;
+                    _.merge(localMatch.$match, match);
+                }
+            }
+        });
+    };
     Aggregate.prototype.exec = function exec(callback) {
         const populateAssociation = this._populateAssociation;
         const hydrateAssociation = this._hydrateAssociation;
         const invertAssociation = this._invertAssociation;
         const collectAssociation = this._collectAssociation;
         const singular = this._singular;
+        const withDeleted = this._withDeleted;
         if (!populateAssociation
             && !hydrateAssociation
             && !invertAssociation
-            && !singular)
+            && !singular
+            && withDeleted)
             return _exec.call(this, callback);
         if (populateAssociation && populateAssociation._fields) {
             Populator_1.Populator.prePopulateAggregate(this, populateAssociation._fields);
         }
+        if (!withDeleted)
+            this.checkDeleted();
         return new Promise((resolve, reject) => {
             _exec.call(this, (error, documents) => {
                 if (error)
@@ -196,12 +253,15 @@ const patchAggregatePrototype = (Aggregate) => {
     };
     Aggregate.prototype._explain = function _explain() {
         const populateAssociation = this._populateAssociation;
+        const withDeleted = this._withDeleted;
         let explain = [['aggregate', this._model.modelName, this._pipeline]];
-        if (!populateAssociation)
+        if (!populateAssociation && withDeleted)
             return explain;
         if (populateAssociation && populateAssociation._fields) {
             Populator_1.Populator.prePopulateAggregate(this, populateAssociation._fields);
         }
+        if (!withDeleted)
+            this.checkDeleted();
         explain = [['aggregate', this._model.modelName, this._pipeline]];
         return explain.concat(Populator_1.Populator.explainPopulateAggregate(this._model, [this._model._explain()], populateAssociation));
     };

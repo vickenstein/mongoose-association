@@ -102,7 +102,7 @@ export class Populator {
     return documents
   }
 
-  static explainPopulateAggregate(model: mongoose.Model<any>, documents: any, populateOptions: any) {
+  static explainPopulateAggregate(model: mongoose.Model<any>, documents: any, populateOptions: any = {}) {
     let explain: any[] = []
     Object.keys(populateOptions).forEach(field => {
       if (field !== '_fields') {

@@ -99,7 +99,7 @@ class Populator {
             return documents;
         });
     }
-    static explainPopulateAggregate(model, documents, populateOptions) {
+    static explainPopulateAggregate(model, documents, populateOptions = {}) {
         let explain = [];
         Object.keys(populateOptions).forEach(field => {
             if (field !== '_fields') {

@@ -13,7 +13,9 @@ import { Collection } from './Collection'
 const POPULATABLE_QUERY = ['find', 'findOne']
 
 declare module 'mongoose' {
+
   export interface Schema {
+    deleteField: string
     model: mongoose.Model<any>
     belongsTo(foreignModelName: string, options?: IOptions, schemaOptions?: any): Association
     polymorphic(foreignModelNames: string[], options?: IOptions, schemaOptions?: any): Association
@@ -21,9 +23,11 @@ declare module 'mongoose' {
     hasMany(foreignModelName: string, options?: IOptions): Association
     indexAssociations(...associations: any[]): SchemaMixin
   }
+
   export interface Model<T> {
     associate(as: string): Association
   }
+
   export interface DocumentQuery<T, DocType extends Document> {
     populateAssociation(options: any): DocumentQuery<any, any>
     collectAssociation(options: any): DocumentQuery<any, any>
@@ -34,6 +38,7 @@ declare module 'mongoose' {
     _explain(): any
     explain(): void
   }
+
   export interface Aggregate<T> {
     hydrateAssociation(options: any): Aggregate<T>
     populateAssociation(options: any): Aggregate<T>
@@ -60,12 +65,12 @@ const plugin = (Schema: mongoose.Schema) => {
     return Populator.populate(this, documents, fields)
   }
 
-  Schema.methods.fetch = function fetch(association: Association | string) {
+  Schema.methods.fetch = function fetch(association: Association) {
     const methodName = association instanceof Object ? association.$fetch : `fetch${Association.capitalize(association)}`
     return this[methodName]()
   }
 
-  Schema.methods.unset = function unset(association: Association | string) {
+  Schema.methods.unset = function unset(association: Association) {
     if (association) {
       const methodName = association instanceof Object ? association.$unset : `unset${Association.capitalize(association)}`
       this[methodName]()
@@ -110,10 +115,26 @@ const patchQueryPrototype = (Query: any) => {
     return this
   }
 
+  Query.prototype.withDeleted = function withDeleted() {
+    this._withDeleted = true
+    return this
+  }
+
+  Query.prototype.checkDeleted = function checkDelete() {
+    if (this.schema.deleteField) {
+      const condition: any = {}
+      condition[this.schema.deleteField] = null
+      this.where(condition)
+    }
+  }
+
   Query.prototype.exec = function exec(options: any, callback?: (err: any, res: any) => void) {
     const populateAssociation = this._populateAssociation
       && Populator.checkFields(this._populateAssociation)
     const collectAssociation = this._collectAssociation
+    const withDeleted = this._withDeleted
+
+    if (!withDeleted) this.checkDeleted()
 
     if (!populateAssociation && !collectAssociation) return _exec.call(this, options, callback)
 
@@ -138,6 +159,10 @@ const patchQueryPrototype = (Query: any) => {
   }
 
   Query.prototype._explain = function _explain() {
+
+    const withDeleted = this._withDeleted
+    if (!withDeleted) this.checkDeleted()
+
     if (!this._populateAssociation) return [['query', this.model.modelName, this._conditions]]
 
     const fields = Populator.checkFields(this._populateAssociation)
@@ -209,21 +234,63 @@ const patchAggregatePrototype = (Aggregate: any) => {
     return this
   }
 
+  Aggregate.prototype.withDeleted = function withDeleted() {
+    this._withDeleted = true
+    return this
+  }
+
+  Aggregate.prototype.checkDeleted = function checkDelete() {
+
+    const model = this._model
+    const schema = model.schema
+    if (schema.deleteField) {
+      const localMatch = AggregationMatcher.match(this._pipeline)
+      const match: any = {}
+      match[schema.deleteField] = null
+      if (localMatch) {
+        _.merge(localMatch.$match, match)
+      } else {
+        this._pipeline.unshift({
+          $match: match
+        })
+      }
+    }
+    const lookups = AggregationMatcher.lookups(this._pipeline)
+
+    lookups.forEach((lookup: any) => {
+      const foreignModel = _.find(mongoose.models, (model: mongoose.Model<any>) => {
+        return model.collection.collectionName === lookup.$lookup.from
+      })
+      if (foreignModel) {
+        if (foreignModel.schema.deleteField) {
+          const localMatch = AggregationMatcher.match(lookup.$lookup.pipeline)
+          const match: any = {}
+          match[foreignModel.schema.deleteField] = null
+          _.merge(localMatch.$match, match)
+        }
+      }
+    })
+  }
+
   Aggregate.prototype.exec = function exec(callback?: (err: any, res: any) => void) {
     const populateAssociation = this._populateAssociation
     const hydrateAssociation = this._hydrateAssociation
     const invertAssociation = this._invertAssociation
     const collectAssociation = this._collectAssociation
     const singular = this._singular
+    const withDeleted = this._withDeleted
 
     if (!populateAssociation
         && !hydrateAssociation
         && !invertAssociation
-        && !singular) return _exec.call(this, callback)
+        && !singular
+        && withDeleted) return _exec.call(this, callback)
 
     if (populateAssociation && populateAssociation._fields) {
       Populator.prePopulateAggregate(this, populateAssociation._fields)
     }
+
+    if (!withDeleted) this.checkDeleted()
 
     return new Promise((resolve, reject) => {
       _exec.call(this, (error: any, documents: any) => {
@@ -254,11 +321,17 @@ const patchAggregatePrototype = (Aggregate: any) => {
 
   Aggregate.prototype._explain = function _explain() {
     const populateAssociation = this._populateAssociation
+    const withDeleted = this._withDeleted
+
     let explain = [['aggregate', this._model.modelName, this._pipeline]]
-    if (!populateAssociation) return explain
+
+    if (!populateAssociation && withDeleted) return explain
     if (populateAssociation && populateAssociation._fields) {
       Populator.prePopulateAggregate(this, populateAssociation._fields)
     }
+
+    if (!withDeleted) this.checkDeleted()
+
     explain = [['aggregate', this._model.modelName, this._pipeline]]
     return explain.concat(Populator.explainPopulateAggregate(
       this._model,

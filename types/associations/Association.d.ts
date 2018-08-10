@@ -15,6 +15,7 @@ export interface IAggregateOptions {
     $match?: object;
     hydrate?: boolean;
     as?: string;
+    preserveNullAndEmptyArrays?: boolean;
 }
 export declare class Association {
     schema: mongoose.Schema;

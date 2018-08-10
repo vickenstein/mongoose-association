@@ -148,10 +148,15 @@ class Association {
             aggregate.match($match);
         return this.aggregateTo(aggregate, options);
     }
-    aggregateTo(aggregate, options) {
+    aggregateTo(aggregate, options = {}) {
         this.aggregateLookUp(aggregate, options);
-        if (this.associationType !== 'hasMany' && !this.through)
-            aggregate.unwind(this.$as);
+        const preserveNullAndEmptyArrays = !!options.preserveNullAndEmptyArrays;
+        if (this.associationType !== 'hasMany' && !this.through) {
+            aggregate.unwind({
+                path: this.$as,
+                preserveNullAndEmptyArrays
+            });
+        }
         return aggregate;
     }
     aggregateLookUpMatch(options) {

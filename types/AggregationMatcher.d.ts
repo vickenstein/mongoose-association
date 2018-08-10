@@ -3,6 +3,7 @@ export declare class AggregationMatcher {
     aggregate: mongoose.Aggregate<any>;
     ['constructor']: typeof AggregationMatcher;
     static match(pipeline: any[]): any;
+    static lookups(pipeline: any[]): any[];
     constructor(aggregate: mongoose.Aggregate<any>, match?: any);
     readonly pipeline: any[];
     readonly modelName: string;

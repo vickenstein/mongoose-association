@@ -1,8 +1,17 @@
 import * as mongoose from 'mongoose';
 import { Association, IOptions } from './associations/Association';
 import { Associations } from './Associations';
+export interface ISoftDeleteableOptions {
+    field?: string;
+    deleter?: string;
+    deleterAs?: string;
+    deleterField?: string;
+}
 export declare class SchemaMixin extends mongoose.Schema {
     associations: Associations;
+    deleteField: string;
+    deleter: string;
+    deleterField: string;
     associate(as: string): Association;
     indexAssociations(...associations: any[]): this;
     belongsTo(foreignModelName: string, options?: IOptions, schemaOptions?: any): Association;
@@ -15,6 +24,7 @@ export declare class SchemaMixin extends mongoose.Schema {
     defineHasOneVirtual(association: Association): void;
     hasMany(foreignModelName: string, options?: IOptions): Association;
     defineHasManyVirtual(association: Association): void;
+    softDeleteable(options?: ISoftDeleteableOptions): void;
     static apply(originalClass: any): void;
 }
 //# sourceMappingURL=SchemaMixin.d.ts.map

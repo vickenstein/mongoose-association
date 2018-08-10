@@ -3,6 +3,7 @@ import { Association, IOptions } from './associations/Association';
 import { SchemaMixin } from './SchemaMixin';
 declare module 'mongoose' {
     interface Schema {
+        deleteField: string;
         model: mongoose.Model<any>;
         belongsTo(foreignModelName: string, options?: IOptions, schemaOptions?: any): Association;
         polymorphic(foreignModelNames: string[], options?: IOptions, schemaOptions?: any): Association;

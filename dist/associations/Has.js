@@ -184,13 +184,17 @@ class Has extends Association_1.Association {
     aggregateLookUp(aggregate, options = {}) {
         if (this.through) {
             const $match = this.aggregateLookUpMatch(options);
+            const preserveNullAndEmptyArrays = !!options.preserveNullAndEmptyArrays;
             aggregate.lookup({
                 from: this.throughCollectionName,
                 let: { localField: this.throughWithAsAssociation.$localField },
                 pipeline: [{ $match }],
                 as: this.throughWithAsAssociation.as,
             });
-            aggregate.unwind(this.throughWithAsAssociation.$as);
+            aggregate.unwind({
+                path: this.throughWithAsAssociation.$as,
+                preserveNullAndEmptyArrays
+            });
             const $throughMatch = this.aggregateThroughLookUpMatch(options);
             aggregate.lookup({
                 from: this.foreignCollectionName,
@@ -199,7 +203,10 @@ class Has extends Association_1.Association {
                 pipeline: [{ $match: $throughMatch }],
                 as: this.throughAs,
             });
-            aggregate.unwind(this.$throughAs);
+            aggregate.unwind({
+                path: this.$throughAs,
+                preserveNullAndEmptyArrays
+            });
             if (this.associationType === 'hasMany') {
                 const $group = { _id: '$_id' };
                 $group[this.as] = { $push: this._throughAs };

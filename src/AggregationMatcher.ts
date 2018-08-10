@@ -14,6 +14,12 @@ export class AggregationMatcher {
     }
   }
 
+  static lookups(pipeline: any[]) {
+    return pipeline.filter((step: any) => {
+      return step && step.$lookup
+    })
+  }
+
   constructor(aggregate: mongoose.Aggregate<any>, match: any = {}) {
     this.aggregate = aggregate
     this.processPipeline(match)

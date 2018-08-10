@@ -8,7 +8,7 @@ export declare class Populator {
     static explainPopulateField(model: mongoose.Model<any>, documents: any, field: string, childrenFields: Fields): any;
     static prePopulateAggregate(aggregate: mongoose.Aggregate<any>, ...populateFields: any[]): void;
     static populateAggregate(model: mongoose.Model<any>, documents: any, populateOptions: any): Promise<any>;
-    static explainPopulateAggregate(model: mongoose.Model<any>, documents: any, populateOptions: any): any[];
+    static explainPopulateAggregate(model: mongoose.Model<any>, documents: any, populateOptions?: any): any[];
     static queryConditionToAggregateMatch(conditions: any): any;
     static aggregateFromQuery(query: mongoose.DocumentQuery<any, any>, fields: any): mongoose.Aggregate<any[]>;
 }

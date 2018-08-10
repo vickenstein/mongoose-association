@@ -231,6 +231,7 @@ export class Has extends Association {
   aggregateLookUp(aggregate: mongoose.Aggregate<any>, options: IAggregateOptions = {}) {
     if (this.through) {
       const $match = this.aggregateLookUpMatch(options)
+      const preserveNullAndEmptyArrays = !!options.preserveNullAndEmptyArrays
 
       aggregate.lookup({
         from: this.throughCollectionName,
@@ -238,7 +239,10 @@ export class Has extends Association {
         pipeline: [{ $match }],
         as: this.throughWithAsAssociation.as,
       })
-      aggregate.unwind(this.throughWithAsAssociation.$as)
+      aggregate.unwind({
+        path: this.throughWithAsAssociation.$as,
+        preserveNullAndEmptyArrays
+      })
       const $throughMatch = this.aggregateThroughLookUpMatch(options)
       aggregate.lookup({
         from: this.foreignCollectionName,
@@ -247,7 +251,10 @@ export class Has extends Association {
         pipeline: [{ $match: $throughMatch }],
         as: this.throughAs,
       })
-      aggregate.unwind(this.$throughAs)
+      aggregate.unwind({
+        path: this.$throughAs,
+        preserveNullAndEmptyArrays
+      })
       if (this.associationType === 'hasMany') {
         const $group: any = { _id: '$_id' }
         $group[this.as] = { $push: this._throughAs }

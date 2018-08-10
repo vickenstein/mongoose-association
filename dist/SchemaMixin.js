@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const mongoose = require("mongoose");
+const Association_1 = require("./associations/Association");
 const Associations_1 = require("./Associations");
 const Collection_1 = require("./Collection");
 const { ObjectId } = mongoose.Schema.Types;
@@ -198,6 +199,87 @@ class SchemaMixin extends mongoose.Schema {
         this.methods[$unset] = function unset() {
             delete this[_as];
             return this;
+        };
+    }
+    softDeleteable(options = {}) {
+        const field = options.field || 'deletedAt';
+        this.deleteField = field;
+        const schemaOptions = {};
+        schemaOptions[field] = { type: Date };
+        const deleter = this.deleter = options.deleter;
+        const deleterAs = options.deleterAs || 'deletedBy';
+        const _deleterAs = Association_1.Association.cacheKey(deleterAs);
+        const $deleterAs = Association_1.Association.variablize(deleterAs);
+        const $fetchDeleterAs = `fetch${Association_1.Association.capitalize(deleterAs)}`;
+        const $unsetDeleterAs = `unset${Association_1.Association.capitalize(deleterAs)}`;
+        const deleterField = this.deleterField = options.deleterField || Association_1.Association.idlize(deleterAs);
+        if (deleter) {
+            function get() {
+                const deleteById = this._doc[deleterField];
+                if (!deleteById)
+                    return deleteById;
+                if (deleteById.constructor.name !== 'ObjectID')
+                    return deleteById._id;
+                return deleteById;
+            }
+            schemaOptions[deleterField] = {
+                type: ObjectId,
+                ref: deleter,
+                get
+            };
+            this.virtual(deleterAs).get(function get() {
+                return __awaiter(this, void 0, void 0, function* () {
+                    if (!Object.prototype.hasOwnProperty.call(this, _deleterAs)) {
+                        const reference = this._doc[deleterField];
+                        if (!reference)
+                            return null;
+                        if (reference.constructor instanceof this.model(deleter)) {
+                            this[_deleterAs] = reference;
+                        }
+                        else {
+                            this[_deleterAs] = yield this[$fetchDeleterAs]();
+                        }
+                    }
+                    return this[_deleterAs];
+                });
+            }).set(function set(value) {
+                if (value instanceof this.model(deleter))
+                    this[_deleterAs] = value;
+                this[deleterField] = value;
+            });
+            this.virtual($deleterAs).get(function get() {
+                return this[_deleterAs];
+            });
+            this.methods[$fetchDeleterAs] = function fetch() {
+                return Association_1.Association.findOne({
+                    modelName: deleter,
+                    localField: '_id',
+                    localFieldValue: this[deleterField],
+                });
+            };
+            this.methods[$unsetDeleterAs] = function unset() {
+                delete this[_deleterAs];
+                return this;
+            };
+        }
+        this.add(schemaOptions);
+        this.methods.delete = function (object) {
+            return __awaiter(this, void 0, void 0, function* () {
+                this[field] = Date.now();
+                if (deleter)
+                    this[deleterField] = object;
+                return yield this.save();
+            });
+        };
+        this.methods.restore = function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                this[field] = null;
+                if (deleter) {
+                    this[$unsetDeleterAs]();
+                    this[deleterField] = null;
+                }
+                return yield this.save();
+            });
         };
     }
     static apply(originalClass) {

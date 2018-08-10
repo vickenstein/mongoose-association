@@ -20,8 +20,11 @@ class Hydrator {
                         .map(nestedDocument => nestedModel.hydrate(nestedDocument));
                     hydratedDocuments[index][cacheField] = nestedDocuments;
                 }
-                else {
+                else if (fieldDocument) {
                     hydratedDocuments[index][cacheField] = nestedModel.hydrate(fieldDocument);
+                }
+                else {
+                    hydratedDocuments[index][cacheField] = null;
                 }
             });
         });
