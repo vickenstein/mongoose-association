@@ -6,7 +6,7 @@ const tsconfig = require('./tsconfig')
 const tsProject = ts.createProject("tsconfig.json")
 
 gulp.task('clean', (done) => {
-  gulp.src(['dist/**/*', 'example/dist/**/*'], {read: false})
+  gulp.src(['dist/*'], {read: false})
       .pipe(clean())
   done()
 })
@@ -19,11 +19,11 @@ gulp.task('ts:compile', (done) => {
   done()
 })
 
-gulp.task('ts:lint', shell.task('npm run lint'))
+gulp.task('package', gulp.series('clean', 'ts:compile'))
 
 gulp.task('ts:watch', (done) => {
-  gulp.watch(tsconfig.include, gulp.series('ts:lint', 'ts:compile'))
+  gulp.watch(tsconfig.files, gulp.series('ts:compile'))
   done()
 })
 
-gulp.task('default', gulp.series('ts:lint', 'clean', 'ts:compile', 'ts:watch'))
+gulp.task('default', gulp.series('package', 'ts:watch'))

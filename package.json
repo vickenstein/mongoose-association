@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "types/index.d.ts",
   "scripts": {
-    "test": "gulp ts:compile && NODE_PATH=. mocha --recursive --exit",
+    "test": "gulp package && NODE_PATH=. mocha --recursive --exit",
     "lint": "node_modules/.bin/tslint --project tsconfig.json"
   },
   "repository": {
