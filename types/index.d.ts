@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose';
 import { Association, IOptions } from './associations/Association';
 import { SchemaMixin } from './SchemaMixin';
+import { Serializer } from './Serializer';
 declare module 'mongoose' {
     interface Schema {
         deleteField: string;
@@ -37,4 +38,5 @@ declare module 'mongoose' {
     }
 }
 export declare function mongooseAssociation(mongoose: any): void;
+export { Serializer };
 //# sourceMappingURL=index.d.ts.map

@@ -1,7 +1,7 @@
 const connect = require('./connect')
 const drop = require('./drop')
 const mongoose = require('mongoose')
-const { mongooseAssociation } = require('dist/index')
+const { mongooseAssociation } = require('../../dist/index')
 mongooseAssociation(mongoose)
 
 module.exports = async () => {

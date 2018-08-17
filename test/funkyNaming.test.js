@@ -1,8 +1,8 @@
-require('test/specHelper')
+require('./specHelper')
 const { assert } = require('chai')
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Types.ObjectId
-const drop = require('test/helpers/drop')
+const drop = require('./helpers/drop')
 
 const Alien = mongoose.model('Alien')
 const Registration = mongoose.model('Registration')

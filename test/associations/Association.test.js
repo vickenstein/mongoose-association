@@ -1,7 +1,7 @@
-require('test/specHelper')
+require('../specHelper')
 const { assert } = require('chai')
 const mongoose = require('mongoose')
-const { Association } = require('dist/associations/Association')
+const { Association } = require('../../dist/associations/Association')
 
 const testSchema = new mongoose.Schema
 

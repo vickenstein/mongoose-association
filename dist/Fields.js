@@ -28,7 +28,10 @@ class Fields {
         return this.fields.length;
     }
     get root() {
-        return _.uniq(this.fields.map(field => field.split('.')[0]));
+        if (!this._root) {
+            this._root = _.uniq(this.fields.map(field => field.split('.')[0]));
+        }
+        return this._root;
     }
     children(matchField) {
         const fields = new Fields();

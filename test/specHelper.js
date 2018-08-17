@@ -5,12 +5,12 @@ mongoose.set('debug', function (collection, method, query, doc, options) {
   mongoose.requestCount++
 })
 
-const { mongooseAssociation } = require('dist/index')
+const { mongooseAssociation } = require('../dist/index')
 mongooseAssociation(mongoose)
 
-const connect = require('test/helpers/connect')
-const disconnect = require('test/helpers/disconnect')
-const setupSchema = require('test/helpers/setupSchema')
+const connect = require('./helpers/connect')
+const disconnect = require('./helpers/disconnect')
+const setupSchema = require('./helpers/setupSchema')
 
 before(() => {
   return new Promise((resolve) => {

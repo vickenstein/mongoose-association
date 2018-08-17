@@ -3,6 +3,8 @@ import * as mongoose from 'mongoose'
 import { Fields } from './Fields'
 import { Association } from './associations/Association'
 
+const ObjectId = mongoose.Types.ObjectId
+
 interface LoDashStatic {
   [enumerateMethod: string]: any
 }
@@ -120,6 +122,7 @@ export class Populator {
 
   static queryConditionToAggregateMatch(conditions: any) {
     Object.keys(conditions).forEach(key => {
+      if (key === '_id') conditions[key] = ObjectId(conditions[key])
       if (conditions[key] instanceof Array) {
         conditions[key] = { $in: conditions[key] }
       }

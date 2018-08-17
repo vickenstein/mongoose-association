@@ -1,6 +1,6 @@
-require('test/specHelper')
+require('./specHelper')
 const { assert } = require('chai')
-const { Associations } = require('dist/Associations')
+const { Associations } = require('../dist/Associations')
 const mongoose = require('mongoose')
 
 describe("Create an holder for all associations for mongoose", () => {
@@ -40,12 +40,6 @@ describe("Create an holder for all associations for mongoose", () => {
       const schema = Rider.schema
       const associations = new Associations(schema)
       assert.strictEqual(associations.collectionName, Rider.collection.name)
-    })
-  })
-
-  describe("#get()", () => {
-    it('can get an belongsTo association by its as', () => {
-
     })
   })
 })

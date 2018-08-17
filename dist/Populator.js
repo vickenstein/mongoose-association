@@ -9,8 +9,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
+const mongoose = require("mongoose");
 const Fields_1 = require("./Fields");
 const Association_1 = require("./associations/Association");
+const ObjectId = mongoose.Types.ObjectId;
 class Populator {
     static checkFields(populateFields) {
         if (populateFields[0] && populateFields[0] instanceof Fields_1.Fields) {
@@ -112,6 +114,8 @@ class Populator {
     }
     static queryConditionToAggregateMatch(conditions) {
         Object.keys(conditions).forEach(key => {
+            if (key === '_id')
+                conditions[key] = ObjectId(conditions[key]);
             if (conditions[key] instanceof Array) {
                 conditions[key] = { $in: conditions[key] };
             }

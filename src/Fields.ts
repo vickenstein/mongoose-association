@@ -1,7 +1,9 @@
 import * as _ from 'lodash'
 
 export class Fields {
+
   private fields: string[]
+  _root: string[]
 
   constructor(options?: object, ...fields: string[]) {
     if (options && !(options instanceof Object)) fields.unshift(options)
@@ -29,7 +31,10 @@ export class Fields {
   }
 
   get root() {
-    return _.uniq(this.fields.map(field => field.split('.')[0]))
+    if (!this._root) {
+      this._root = _.uniq(this.fields.map(field => field.split('.')[0]))
+    }
+    return this._root
   }
 
   children(matchField: string) {

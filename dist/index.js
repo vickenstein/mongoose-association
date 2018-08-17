@@ -10,6 +10,8 @@ const AggregationMatcher_1 = require("./AggregationMatcher");
 const Hydrator_1 = require("./Hydrator");
 const Fields_1 = require("./Fields");
 const Collection_1 = require("./Collection");
+const Serializer_1 = require("./Serializer");
+exports.Serializer = Serializer_1.Serializer;
 const POPULATABLE_QUERY = ['find', 'findOne'];
 const plugin = (Schema) => {
     Schema.statics.associate = function associate(as) {

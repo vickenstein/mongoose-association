@@ -1,8 +1,8 @@
-require('test/specHelper')
+require('./specHelper')
 const mongoose = require('mongoose')
 const { assert } = require('chai')
-const { Collection } = require('dist/Collection')
-const drop = require('test/helpers/drop')
+const { Collection } = require('../dist/Collection')
+const drop = require('./helpers/drop')
 
 const Car = mongoose.model('Car')
 const Assembly = mongoose.model('Assembly')

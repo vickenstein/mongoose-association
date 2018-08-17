@@ -1,11 +1,11 @@
-require('test/specHelper')
+require('../specHelper')
 const { assert } = require('chai')
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Types.ObjectId
 
-const { HasMany } = require('dist/associations/HasMany')
-const { Collection } = require('dist/Collection')
-const drop = require('test/helpers/drop')
+const { HasMany } = require('../../dist/associations/HasMany')
+const { Collection } = require('../../dist/Collection')
+const drop = require('../helpers/drop')
 
 const testSchema = new mongoose.Schema
 const Bike = mongoose.model('Bike')

@@ -1,11 +1,11 @@
 {
   "name": "mongoose-association",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "A cleaner and faster way to setup mongoose populate with virtual field",
   "main": "dist/index.js",
   "types": "types/index.d.ts",
   "scripts": {
-    "test": "gulp package && NODE_PATH=. mocha --recursive --exit",
+    "test": "gulp package && mocha --recursive --exit",
     "lint": "node_modules/.bin/tslint --project tsconfig.json"
   },
   "repository": {
@@ -32,9 +32,6 @@
     "@types/mongoose": "^5.2.3",
     "benchmark": "^2.1.4",
     "chai": "^4.1.2",
-    "eslint": "^4.19.1",
-    "eslint-config-airbnb-base": "^13.0.0",
-    "eslint-plugin-import": "^2.13.0",
     "gulp": "^4.0.0",
     "gulp-clean": "^0.4.0",
     "gulp-shell": "^0.6.5",
@@ -47,6 +44,7 @@
   "dependencies": {
     "inflection": "^1.12.0",
     "lodash": "^4.17.10",
-    "mongoose": ">=4.11.0"
+    "mongoose": ">=4.11.0",
+    "node-association": "0.0.3"
   }
 }

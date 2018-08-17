@@ -9,6 +9,7 @@ import { AggregationMatcher } from './AggregationMatcher'
 import { Hydrator } from './Hydrator'
 import { Fields } from './Fields'
 import { Collection } from './Collection'
+import { Serializer } from './Serializer'
 
 const POPULATABLE_QUERY = ['find', 'findOne']
 
@@ -294,6 +295,7 @@ const patchAggregatePrototype = (Aggregate: any) => {
 
     return new Promise((resolve, reject) => {
       _exec.call(this, (error: any, documents: any) => {
+
         if (error) return reject(error)
         if (!documents) return resolve(documents)
         if (invertAssociation) {
@@ -375,4 +377,8 @@ export function mongooseAssociation(mongoose: any) {
   // using mongoose plugin to apply mongoose model
   // static methods and instance methods for populating
   mongoose.plugin(plugin)
+}
+
+export {
+  Serializer
 }
