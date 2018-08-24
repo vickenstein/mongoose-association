@@ -114,10 +114,16 @@ class Populator {
     }
     static queryConditionToAggregateMatch(conditions) {
         Object.keys(conditions).forEach(key => {
-            if (key === '_id')
-                conditions[key] = ObjectId(conditions[key]);
-            if (conditions[key] instanceof Array) {
-                conditions[key] = { $in: conditions[key] };
+            const value = conditions[key];
+            if (ObjectId.isValid(value))
+                return (conditions[key] = ObjectId(value));
+            if (value instanceof Array) {
+                if (ObjectId.isValid(value[0])) {
+                    conditions[key] = { $in: value.map((aValue) => ObjectId(aValue)) };
+                }
+                else {
+                    conditions[key] = { $in: value };
+                }
             }
         });
         return conditions;

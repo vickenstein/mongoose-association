@@ -142,6 +142,14 @@ describe("mongose standard queries, find, findOne with population", () => {
       const rider = await bikes[0].rider
       assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
+    it('get the associated belongsTo association with multi part match query', async () => {
+      const result = await Rider.findOne({
+        _id: riders[0].id,
+        bikeId: bikes[0].id
+      }).populateAssociation('bike')
+      assert.isOk(result)
+      assert.strictEqual(result.id.toString(), riders[0].id.toString())
+    })
   })
 
   describe('#aggregate()', () => {
