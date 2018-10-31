@@ -55,7 +55,7 @@ export class Serializer {
     let serializer = this
     field.split('.').some(subfield => {
       if (_.includes(serializer.associations, subfield)) {
-        const association = serializer.prototype.Model.associate(subfield)
+        const association = serializer.Model.associate(subfield)
         serializer = this.prototype.Serializer(association.foreignModelName)
         populatableFields.push(subfield)
         return false
