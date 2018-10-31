@@ -1,17 +1,17 @@
 const mongoose = require('mongoose')
 const { Serializer } = require('../../dist/index')
 
-module.exports = class RiderSerializer extends Serializer {
+module.exports = class HelmetSerializer extends Serializer {
 
   static get Model() {
-    return mongoose.model('Rider')
+    return mongoose.model('Helmet')
   }
 
   static get properties() {
-    return ['id', 'age']
+    return ['id']
   }
 
   static get associations() {
-    return ['helmet']
+    return ['rider']
   }
 }

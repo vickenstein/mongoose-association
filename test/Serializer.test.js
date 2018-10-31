@@ -75,6 +75,13 @@ describe("Serializer", () => {
     return setupData()
   })
 
+  describe("#getPopulatableAssociations()", () => {
+    it('should return populatable associations', async () => {
+      const getPopulatableAssociations = BikeSerializer.getPopulatableAssociations('rider.helmet.strap', 'rider.passport', 'assemblies.part', 'manufacturer')
+      assert.sameMembers(getPopulatableAssociations, ['rider.helmet', 'assemblies.part'])
+    })
+  })
+
   describe("#toJson()", () => {
     it('should be able to serialize a bike', async () => {
       const bikeSerializer = new BikeSerializer(bikes[0])

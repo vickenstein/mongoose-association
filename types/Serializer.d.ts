@@ -15,6 +15,8 @@ export declare class Serializer {
     static readonly properties: string[];
     static readonly computed: string[];
     static readonly associations: string[];
+    static getPopulatableAssociations(...fields: string[]): string[];
+    static getPopulatableAssociation(field: string): string;
     constructor(document: mongoose.Document, ...fields: string[]);
     readonly isLean: number;
     readonly properties: string[];

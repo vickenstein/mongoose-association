@@ -24,6 +24,32 @@ class Serializer {
     static get associations() {
         return [];
     }
+    static getPopulatableAssociations(...fields) {
+        //@ts-ignore werid syntax need to fix
+        const populateFields = (fields[0] instanceof Fields_1.Fields) ? fields[0] : new Fields_1.Fields(...fields);
+        const populatableFields = [];
+        populateFields.fields.forEach((field) => {
+            const populatableField = this.getPopulatableAssociation(field);
+            if (populatableField)
+                populatableFields.push(populatableField);
+        });
+        //@ts-ignore werid syntax need to fix
+        return (new Fields_1.Fields(...populatableFields)).fields;
+    }
+    static getPopulatableAssociation(field) {
+        const populatableFields = [];
+        let serializer = this;
+        field.split('.').some(subfield => {
+            if (_.includes(serializer.associations, subfield)) {
+                const association = serializer.prototype.Model.associate(subfield);
+                serializer = this.prototype.Serializer(association.foreignModelName);
+                populatableFields.push(subfield);
+                return false;
+            }
+            return true;
+        });
+        return populatableFields.join('.');
+    }
     get isLean() {
         return this.properties.length;
     }
