@@ -115,18 +115,28 @@ class Populator {
     static queryConditionToAggregateMatch(conditions) {
         Object.keys(conditions).forEach(key => {
             const value = conditions[key];
-            if (ObjectId.isValid(value))
-                return (conditions[key] = ObjectId(value));
-            if (value instanceof Array) {
-                if (ObjectId.isValid(value[0])) {
-                    conditions[key] = { $in: value.map((aValue) => ObjectId(aValue)) };
-                }
-                else {
-                    conditions[key] = { $in: value };
-                }
+            if (!/^\$/.test(key) && value instanceof Array && ObjectId.isValid(value[0])) {
+                conditions[key] = { $in: value.map((aValue) => ObjectId(aValue)) };
+            }
+            else {
+                conditions[key] = this.deepQueryConditionStringToObjectId(value);
             }
         });
         return conditions;
+    }
+    static deepQueryConditionStringToObjectId(node) {
+        if (ObjectId.isValid(node)) {
+            return ObjectId(node);
+        }
+        else if (node instanceof Object) {
+            Object.keys(node).forEach(key => {
+                node[key] = this.deepQueryConditionStringToObjectId(node[key]);
+            });
+        }
+        else if (node instanceof Array) {
+            return node.map(branch => this.deepQueryConditionStringToObjectId(branch));
+        }
+        return node;
     }
     static aggregateFromQuery(query, fields) {
         const aggregate = query.model.aggregate()

@@ -152,6 +152,24 @@ describe("mongose standard queries, find, findOne with population", () => {
     })
   })
 
+  describe('#find', () => {
+    it('get the associated belongsTo association with $or query', async () => {
+      const result = await Rider.find({
+        $or: [
+          {
+            _id: riders[0].id
+          },
+          {
+            bikeId: bikes[0].id
+          }
+        ]
+      }).populateAssociation('bike')
+      assert.isOk(result)
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].$bike.id.toString(), bikes[0].id.toString())
+    })
+  })
+
   describe('#aggregate()', () => {
     it('get the associated belongsTo through aggregation with association population', async () => {
       const results = await Rider.associate('bike').aggregate().populateAssociation('helmet')

@@ -10,6 +10,7 @@ export declare class Populator {
     static populateAggregate(model: mongoose.Model<any>, documents: any, populateOptions: any): Promise<any>;
     static explainPopulateAggregate(model: mongoose.Model<any>, documents: any, populateOptions?: any): any[];
     static queryConditionToAggregateMatch(conditions: any): any;
+    static deepQueryConditionStringToObjectId(node: any): any;
     static aggregateFromQuery(query: mongoose.DocumentQuery<any, any>, fields: any): mongoose.Aggregate<any[]>;
 }
 //# sourceMappingURL=Populator.d.ts.map
