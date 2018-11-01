@@ -1,6 +1,6 @@
 {
   "name": "mongoose-association",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "A cleaner and faster way to setup mongoose populate with virtual field",
   "main": "dist/index.js",
   "types": "types/index.d.ts",
@@ -45,6 +45,6 @@
     "inflection": "^1.12.0",
     "lodash": "^4.17.10",
     "mongoose": ">=4.11.0",
-    "node-association": "0.0.6"
+    "node-association": "0.0.9"
   }
 }
