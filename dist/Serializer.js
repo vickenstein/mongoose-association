@@ -62,6 +62,9 @@ class Serializer {
     get associations() {
         return _.intersection(this.fields.root, this.constructor.associations);
     }
+    get computed() {
+        return _.intersection(this.fields.root, this.constructor.computed);
+    }
     Serializer(modelName) {
         return node_association_1.ClassFinder.classFor(modelName, 'Serializer');
     }
@@ -80,6 +83,10 @@ class Serializer {
                 json[property] = this.document[property];
             });
         }
+        this.computed.forEach(property => {
+            const value = this.document[property];
+            json[property] = _.isFunction(value) ? value.bind(this.document)() : value;
+        });
         this.associations.forEach((as) => {
             const association = this.Model.associate(as);
             const nestedDocument = this.document[association._as];

@@ -14,4 +14,8 @@ module.exports = class RiderSerializer extends Serializer {
   static get associations() {
     return ['helmet']
   }
+
+  static get computed() {
+    return ['doubleAge']
+  }
 }

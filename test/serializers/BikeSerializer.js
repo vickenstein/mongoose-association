@@ -14,4 +14,8 @@ module.exports = class BikeSerializer extends Serializer {
   static get associations() {
     return ['rider', 'assemblies', 'components']
   }
+
+  static get computed() {
+    return ['uppercaseColor']
+  }
 }

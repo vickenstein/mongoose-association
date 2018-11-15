@@ -6,6 +6,11 @@ const riderSchema = new Schema({
     type: Number
   }
 })
+
+riderSchema.methods.doubleAge = function() {
+  return this.age * 2
+}
+
 riderSchema.belongsTo('Bike').index(1, { sparse: true })
 riderSchema.belongsTo('Helmet')
 
@@ -14,6 +19,12 @@ const bikeSchema = new Schema({
     type: String
   }
 })
+
+bikeSchema.methods.uppercaseColor = function() {
+  console.log(this, this.color)
+  return this.color.toUpperCase()
+}
+
 bikeSchema.hasOne('Rider')
 bikeSchema.hasOne('Helmet', {
   through: 'Rider'

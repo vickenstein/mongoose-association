@@ -86,6 +86,10 @@ export class Serializer {
     return _.intersection(this.fields.root, this.constructor.associations)
   }
 
+  get computed() {
+    return _.intersection(this.fields.root, this.constructor.computed)
+  }
+
   Serializer(modelName: string) {
     return ClassFinder.classFor(modelName, 'Serializer')
   }
@@ -102,6 +106,11 @@ export class Serializer {
         json[property] = this.document[property]
       })
     }
+
+    this.computed.forEach(property => {
+      const value = this.document[property]
+      json[property] = _.isFunction(value) ? value.bind(this.document)() : value
+    })
 
     this.associations.forEach((as: string) => {
 

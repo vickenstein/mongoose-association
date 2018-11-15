@@ -155,5 +155,19 @@ describe("Serializer", () => {
         }]
       }))
     })
+    it('should be able to serialize a bike with the rider with computed property', async () => {
+      const bikeSerializer = new BikeSerializer(bikes[0], 'rider.doubleAge', 'uppercaseColor')
+      await bikes[0].rider
+      assert.strictEqual(JSON.stringify(bikeSerializer.toJson({})), JSON.stringify({
+        id: bikes[0].id,
+        color: bikes[0].color,
+        uppercaseColor: bikes[0].color.toUpperCase(),
+        rider: {
+          id: riders[0].id,
+          age: riders[0].age,
+          doubleAge: riders[0].age * 2
+        }
+      }))
+    })
   })
 })

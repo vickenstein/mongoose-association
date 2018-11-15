@@ -21,6 +21,7 @@ export declare class Serializer {
     readonly isLean: number;
     readonly properties: string[];
     readonly associations: string[];
+    readonly computed: string[];
     Serializer(modelName: string): any;
     toJson(json: any): any;
 }
