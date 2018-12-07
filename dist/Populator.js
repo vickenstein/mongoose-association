@@ -115,7 +115,7 @@ class Populator {
     static queryConditionToAggregateMatch(conditions) {
         Object.keys(conditions).forEach(key => {
             const value = conditions[key];
-            if (!/^\$/.test(key) && value instanceof Array && ObjectId.isValid(value[0])) {
+            if (!/^\$/.test(key) && value instanceof Array && typeof value[0] !== 'number' && ObjectId.isValid(value[0])) {
                 conditions[key] = { $in: value.map((aValue) => ObjectId(aValue)) };
             }
             else {
@@ -125,7 +125,7 @@ class Populator {
         return conditions;
     }
     static deepQueryConditionStringToObjectId(node) {
-        if (ObjectId.isValid(node)) {
+        if (typeof node !== 'number' && ObjectId.isValid(node)) {
             return ObjectId(node);
         }
         else if (node instanceof Object) {
