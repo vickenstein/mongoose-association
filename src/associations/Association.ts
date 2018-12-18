@@ -226,7 +226,7 @@ export class Association {
 
   aggregateTo(aggregate: mongoose.Aggregate<any>, options: IAggregateOptions = {}) {
     this.aggregateLookUp(aggregate, options)
-    const preserveNullAndEmptyArrays = !!options.preserveNullAndEmptyArrays
+    const preserveNullAndEmptyArrays = typeof options.preserveNullAndEmptyArrays == 'boolean' ? options.preserveNullAndEmptyArrays : true
     if (this.associationType !== 'hasMany' && !this.through) {
       aggregate.unwind({
         path: this.$as,

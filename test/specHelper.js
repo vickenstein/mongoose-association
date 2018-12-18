@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 mongoose.requestCount = 0
 mongoose.set('debug', function (collection, method, query, doc, options) {
-  // console.log(collection, method, query)
   mongoose.requestCount++
 })
 

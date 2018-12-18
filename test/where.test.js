@@ -47,13 +47,17 @@ describe("assign association class", () => {
 
   describe("#where()", () => {
     it('standard aggregate with match on lookup', async () => {
-      const redResult = await Rider.associate('bike').aggregate().where({
+      const redResult = await Rider.associate('bike').aggregate({
+        preserveNullAndEmptyArrays: false
+      }).where({
         bike: {
           color: 'red'
         }
       })
       assert.strictEqual(redResult.length, 3)
-      const blueResult = await Rider.associate('bike').aggregate().where({
+      const blueResult = await Rider.associate('bike').aggregate({
+        preserveNullAndEmptyArrays: false
+      }).where({
         bike: {
           color: 'blue'
         }

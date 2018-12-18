@@ -150,7 +150,7 @@ class Association {
     }
     aggregateTo(aggregate, options = {}) {
         this.aggregateLookUp(aggregate, options);
-        const preserveNullAndEmptyArrays = !!options.preserveNullAndEmptyArrays;
+        const preserveNullAndEmptyArrays = typeof options.preserveNullAndEmptyArrays == 'boolean' ? options.preserveNullAndEmptyArrays : true;
         if (this.associationType !== 'hasMany' && !this.through) {
             aggregate.unwind({
                 path: this.$as,
