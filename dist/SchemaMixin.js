@@ -144,6 +144,8 @@ class SchemaMixin extends mongoose.Schema {
             this.associations = new Associations_1.Associations(this);
         const association = this.associations.add('hasOne', _.merge({}, options, { foreignModelName }));
         this.defineHasOneVirtual(association);
+        if (association.dependent)
+            this.defineDependentHook(association);
         return association;
     }
     defineHasOneVirtual(association) {
@@ -171,6 +173,8 @@ class SchemaMixin extends mongoose.Schema {
             this.associations = new Associations_1.Associations(this);
         const association = this.associations.add('hasMany', _.merge({}, options, { foreignModelName }));
         this.defineHasManyVirtual(association);
+        if (association.dependent)
+            this.defineDependentHook(association);
         return association;
     }
     defineHasManyVirtual(association) {
@@ -200,6 +204,32 @@ class SchemaMixin extends mongoose.Schema {
             delete this[_as];
             return this;
         };
+    }
+    defineDependentHook(association) {
+        this.post('remove', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                const session = this.$session();
+                const { dependent, modelName } = association;
+                const { associationType, model, localField, typeField } = association.withAssociation;
+                const query = {};
+                query[localField] = this.id;
+                if (associationType === 'polymorphic') {
+                    query[typeField] = modelName;
+                }
+                if (dependent === 'delete') {
+                    yield model.deleteMany(query, {
+                        session
+                    });
+                }
+                else {
+                    const field = {};
+                    field[localField] = null;
+                    yield model.updateMany(query, field, {
+                        session
+                    });
+                }
+            });
+        });
     }
     softDeleteable(options = {}) {
         const field = options.field || 'deletedAt';

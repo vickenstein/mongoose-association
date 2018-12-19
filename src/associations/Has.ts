@@ -1,3 +1,4 @@
+import * as _ from 'lodash'
 import * as mongoose from 'mongoose'
 import { Association, IOptions, IAggregateOptions } from './Association'
 
@@ -7,6 +8,7 @@ const OPTIONS = {
   throughAs: 'name of the property on the through model where it associate with this model',
   // tslint:disable-next-line: max-line-length
   throughWith: 'name of the property on the through model where it associate with the association model',
+  dependent: 'delete or nullify, does not trigger schema hook'
 }
 
 export class Has extends Association {
@@ -23,7 +25,17 @@ export class Has extends Association {
     if (!options.foreignModelName) {
       throw 'Can\'t create a has association without specifying a foreignModelName'
     }
+    if (options.dependent && options.through) {
+      throw 'Can\'t create a depedent workflow on a through association'
+    }
+    if (options.dependent && !_.includes(['delete', 'nullify'], options.dependent)) {
+      throw 'Invalid option for dependent, valid options: delete, nullfiy'
+    }
     super(options, schema)
+  }
+
+  get dependent() {
+    return this.define('dependent', null)
   }
 
   get isReference() {

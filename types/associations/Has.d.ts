@@ -4,6 +4,7 @@ export declare class Has extends Association {
     static readonly options: string[];
     static readonly isReference: boolean;
     constructor(options: IOptions, schema: mongoose.Schema);
+    readonly dependent: any;
     readonly isReference: boolean;
     readonly through: any;
     readonly throughModel: any;

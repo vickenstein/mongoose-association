@@ -105,7 +105,8 @@ partSchema.hasMany('Car', {
 
 
 carSchema.hasMany('Assembly', {
-  with: 'vehicle'
+  with: 'vehicle',
+  dependent: 'nullify'
 })
 carSchema.hasMany('Part', {
   through: 'Assembly',
@@ -113,7 +114,8 @@ carSchema.hasMany('Part', {
 })
 
 bikeSchema.hasMany('Assembly', {
-  with: 'vehicle'
+  with: 'vehicle',
+  dependent: 'delete'
 })
 bikeSchema.hasMany('Part', {
   through: 'Assembly',

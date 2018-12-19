@@ -15,6 +15,17 @@ describe("Some shared functionality of the has reference", () => {
       const has = new Has({ foreignModelName: 'Rider' }, testSchema)
       assert.strictEqual(has.foreignModelName, 'Rider')
     })
+
+    it('creates error when creating a through association with dependent strategies', () => {
+      assert.throws(() => { new Has({ foreignModelName: 'Rider', through: 'Test', dependent: 'delete' }, testSchema) }, "Can\'t create a depedent workflow on a through association")
+    })
+  })
+
+  describe("get dependent", () => {
+    it('get the depedent type', () => {
+      const has = new Has({ foreignModelName: 'Rider', dependent: 'delete' }, mongoose.model('Bike').schema)
+      assert.strictEqual(has.dependent, 'delete')
+    })
   })
 
   describe("get #with", () => {

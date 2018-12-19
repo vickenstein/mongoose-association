@@ -153,7 +153,7 @@ export class SchemaMixin extends mongoose.Schema {
     const association = this.associations.add('hasOne', _.merge({}, options, { foreignModelName }))
 
     this.defineHasOneVirtual(association)
-
+    if (association.dependent) this.defineDependentHook(association)
     return association
   }
 
@@ -183,7 +183,7 @@ export class SchemaMixin extends mongoose.Schema {
     const association = this.associations.add('hasMany', _.merge({}, options, { foreignModelName }))
 
     this.defineHasManyVirtual(association)
-
+    if (association.dependent) this.defineDependentHook(association)
     return association
   }
 
@@ -213,6 +213,30 @@ export class SchemaMixin extends mongoose.Schema {
       delete this[_as]
       return this
     }
+  }
+
+  defineDependentHook(association: Association) {
+    this.post('remove', async function() {
+      const session = this.$session()
+      const { dependent, modelName } = association
+      const { associationType, model, localField, typeField } = association.withAssociation
+      const query:any = {}
+      query[localField] = this.id
+      if (associationType === 'polymorphic') {
+        query[typeField] = modelName
+      }
+      if (dependent === 'delete') {
+        await model.deleteMany(query, {
+          session
+        })
+      } else {
+        const field:any = {}
+        field[localField] = null
+        await model.updateMany(query, field, {
+          session
+        })
+      }
+    })
   }
 
   softDeleteable(options: ISoftDeleteableOptions = {}) {
