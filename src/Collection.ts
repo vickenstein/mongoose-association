@@ -49,7 +49,7 @@ export class Collection<T> extends Array<T> {
         throughAttribute[this.association.withAssociation.as] = this.document
         return throughAttribute
       })
-      await this.association.throughModel.create(throughAttributes)
+      await this.association.throughModel.insertMany(throughAttributes)
     }
     return foreignObjects.length === 1 ? foreignObjects[0] : foreignObjects
   }
@@ -80,7 +80,7 @@ export class Collection<T> extends Array<T> {
         attribute[as] = this.document
       })
     }
-    const foreignObjects: Array<T> = await model.create(attributes, options)
+    const foreignObjects: Array<T> = await model.insertMany(attributes, options)
     this._push(...foreignObjects)
     if (this.association.through) {
       const throughAttributes = foreignObjects.map(foreignObject => {
@@ -89,7 +89,7 @@ export class Collection<T> extends Array<T> {
         throughAttribute[this.association.withAssociation.as] = this.document
         return throughAttribute
       })
-      await this.association.throughModel.create(throughAttributes)
+      await this.association.throughModel.insertMany(throughAttributes)
     }
     return foreignObjects
   }

@@ -9,6 +9,7 @@ const Bike = mongoose.model('Bike')
 const Car = mongoose.model('Car')
 const Part = mongoose.model('Part')
 const Assembly = mongoose.model('Assembly')
+const Rider = mongoose.model('Rider')
 
 const BIKECOUNT = 5
 const PARTCOUNT = 5
@@ -19,10 +20,7 @@ for(let i = 0; i < BIKECOUNT; i++) {
 }
 const bikes = []
 const cars = []
-const ratings = []
-const carRatings = []
 const riders = []
-const helmets = []
 const parts = []
 const bikeAssemblies = []
 const carAssemblies = []
@@ -35,6 +33,8 @@ async function setupData() {
   for(let i = 0; i < BIKECOUNT; i++) {
     const bike = await new Bike({ _id: ObjectIds[i] }).save()
     bikes.push(bike)
+    const rider = await new Rider({ bike }).save()
+    riders.push(rider)
     const car = await new Car({ _id: ObjectIds[i] }).save()
     cars.push(car)
     for(let j = 0; j < PARTPERBIKE; j++) {
@@ -78,6 +78,19 @@ describe("assign association class", () => {
       })
 
       assert.strictEqual(assemblies.length, 0)
+    })
+    it('deletes the rider for the bike when on remove of bike', async () => {
+      const bike = await Bike.findOne({
+        _id: ObjectIds[1]
+      })
+
+      await bike.remove()
+
+      const rider = await Rider.findOne({
+        bikeId: ObjectIds[1]
+      })
+
+      assert.isNotOk(rider)
     })
     it('nullify all assembly for bike when on remove of bike', async () => {
       const car = await Car.findOne({

@@ -45,7 +45,7 @@ class Collection extends Array {
                     throughAttribute[this.association.withAssociation.as] = this.document;
                     return throughAttribute;
                 });
-                yield this.association.throughModel.create(throughAttributes);
+                yield this.association.throughModel.insertMany(throughAttributes);
             }
             return foreignObjects.length === 1 ? foreignObjects[0] : foreignObjects;
         });
@@ -79,7 +79,7 @@ class Collection extends Array {
                     attribute[as] = this.document;
                 });
             }
-            const foreignObjects = yield model.create(attributes, options);
+            const foreignObjects = yield model.insertMany(attributes, options);
             this._push(...foreignObjects);
             if (this.association.through) {
                 const throughAttributes = foreignObjects.map(foreignObject => {
@@ -88,7 +88,7 @@ class Collection extends Array {
                     throughAttribute[this.association.withAssociation.as] = this.document;
                     return throughAttribute;
                 });
-                yield this.association.throughModel.create(throughAttributes);
+                yield this.association.throughModel.insertMany(throughAttributes);
             }
             return foreignObjects;
         });

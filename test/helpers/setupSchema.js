@@ -25,7 +25,9 @@ bikeSchema.methods.uppercaseColor = function() {
   return this.color.toUpperCase()
 }
 
-bikeSchema.hasOne('Rider')
+bikeSchema.hasOne('Rider', {
+  dependent: 'delete'
+})
 bikeSchema.hasOne('Helmet', {
   through: 'Rider'
 })
