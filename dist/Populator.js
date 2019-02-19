@@ -126,7 +126,9 @@ class Populator {
     }
     static deepQueryConditionStringToObjectId(node) {
         if (typeof node !== 'number' && ObjectId.isValid(node)) {
-            return ObjectId(node);
+            if (node instanceof Object || typeof node === 'string' && node.length === 24) {
+                return ObjectId(node);
+            }
         }
         else if (node instanceof Object) {
             Object.keys(node).forEach(key => {
