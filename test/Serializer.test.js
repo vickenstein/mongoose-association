@@ -85,21 +85,21 @@ describe("Serializer", () => {
   describe("#toJson()", () => {
     it('should be able to serialize a bike', async () => {
       const bikeSerializer = new BikeSerializer(bikes[0])
-      assert.strictEqual(JSON.stringify(bikeSerializer.toJson({})), JSON.stringify({
+      assert.strictEqual(JSON.stringify(await bikeSerializer.toJson({})), JSON.stringify({
         id: bikes[0].id,
         color: bikes[0].color
       }))
     })
     it('should be able to serialize a bike with only color', async () => {
       const bikeSerializer = new BikeSerializer(bikes[0], 'color')
-      assert.strictEqual(JSON.stringify(bikeSerializer.toJson({})), JSON.stringify({
+      assert.strictEqual(JSON.stringify(await bikeSerializer.toJson({})), JSON.stringify({
         color: bikes[0].color
       }))
     })
     it('should be able to serialize a bike with the rider', async () => {
       const bikeSerializer = new BikeSerializer(bikes[0], 'rider')
       await bikes[0].rider
-      assert.strictEqual(JSON.stringify(bikeSerializer.toJson({})), JSON.stringify({
+      assert.strictEqual(JSON.stringify(await bikeSerializer.toJson({})), JSON.stringify({
         id: bikes[0].id,
         color: bikes[0].color,
         rider: {
@@ -111,7 +111,7 @@ describe("Serializer", () => {
     it('should be able to serialize a bike with assemblies', async () => {
       const bikeSerializer = new BikeSerializer(bikes[0], 'assemblies')
       const assemblies = await bikes[0].assemblies
-      assert.strictEqual(JSON.stringify(bikeSerializer.toJson({})), JSON.stringify({
+      assert.strictEqual(JSON.stringify(await bikeSerializer.toJson({})), JSON.stringify({
         id: bikes[0].id,
         color: bikes[0].color,
         assemblies: [{
@@ -124,7 +124,7 @@ describe("Serializer", () => {
     it('should be able to serialize a bike with parts', async () => {
       const bikeSerializer = new BikeSerializer(bikes[0], 'components')
       const parts = await bikes[0].components
-      assert.strictEqual(JSON.stringify(bikeSerializer.toJson({})), JSON.stringify({
+      assert.strictEqual(JSON.stringify(await bikeSerializer.toJson({})), JSON.stringify({
         id: bikes[0].id,
         color: bikes[0].color,
         components: [{
@@ -139,7 +139,7 @@ describe("Serializer", () => {
         _id: bikes[0].id
       }).populateAssociation('assemblies.part')
       const bikeSerializer = new BikeSerializer(bike, 'assemblies.part')
-      assert.strictEqual(JSON.stringify(bikeSerializer.toJson({})), JSON.stringify({
+      assert.strictEqual(JSON.stringify(await bikeSerializer.toJson({})), JSON.stringify({
         id: bikes[0].id,
         color: bikes[0].color,
         assemblies: [{
@@ -158,7 +158,7 @@ describe("Serializer", () => {
     it('should be able to serialize a bike with the rider with computed property', async () => {
       const bikeSerializer = new BikeSerializer(bikes[0], 'rider.doubleAge', 'uppercaseColor')
       await bikes[0].rider
-      assert.strictEqual(JSON.stringify(bikeSerializer.toJson({})), JSON.stringify({
+      assert.strictEqual(JSON.stringify(await bikeSerializer.toJson({})), JSON.stringify({
         id: bikes[0].id,
         color: bikes[0].color,
         uppercaseColor: bikes[0].color.toUpperCase(),
@@ -166,6 +166,19 @@ describe("Serializer", () => {
           id: riders[0].id,
           age: riders[0].age,
           doubleAge: riders[0].age * 2
+        }
+      }))
+    })
+    it('should be able to serialize a bike with the rider with computed async property', async () => {
+      const bikeSerializer = new BikeSerializer(bikes[0], 'rider.asyncAge')
+      await bikes[0].rider
+      assert.strictEqual(JSON.stringify(await bikeSerializer.toJson({})), JSON.stringify({
+        id: bikes[0].id,
+        color: bikes[0].color,
+        rider: {
+          id: riders[0].id,
+          age: riders[0].age,
+          asyncAge: riders[0].age * 2
         }
       }))
     })

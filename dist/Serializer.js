@@ -1,4 +1,12 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const Fields_1 = require("./Fields");
@@ -69,45 +77,54 @@ class Serializer {
         return node_association_1.ClassFinder.classFor(modelName, 'Serializer');
     }
     toJson(json) {
-        if (!json)
-            return json;
-        if (!this.document)
-            return this.document;
-        if (!this.isLean) {
-            this.constructor.properties.forEach(property => {
-                json[property] = this.document[property];
-            });
-        }
-        else {
-            this.properties.forEach(property => {
-                json[property] = this.document[property];
-            });
-        }
-        this.computed.forEach(property => {
-            const value = this.document[property];
-            json[property] = _.isFunction(value) ? value.bind(this.document)() : value;
-        });
-        this.associations.forEach((as) => {
-            const association = this.Model.associate(as);
-            const nestedDocument = this.document[association._as];
-            if (!nestedDocument)
-                return null;
-            const NestedSerializer = this.Serializer(association.foreignModelName);
-            if (nestedDocument instanceof Array) {
-                const childrenFields = this.fields.children(as);
-                json[association.as] = nestedDocument.map(aNestedDocument => ({}));
-                json[association.as].forEach((nestedJson, index) => {
-                    const nestedSerializer = new NestedSerializer(nestedDocument[index], childrenFields);
-                    nestedSerializer.toJson(nestedJson);
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!json)
+                return json;
+            if (!this.document)
+                return this.document;
+            if (!this.isLean) {
+                this.constructor.properties.forEach(property => {
+                    json[property] = this.document[property];
                 });
             }
             else {
-                json[association.as] = {};
-                const nestedSerializer = new NestedSerializer(nestedDocument, this.fields.children(as));
-                nestedSerializer.toJson(json[association.as]);
+                this.properties.forEach(property => {
+                    json[property] = this.document[property];
+                });
             }
+            const { computed } = this;
+            const computedPromises = computed.map(property => {
+                const value = this.document[property];
+                return _.isFunction(value) ? value.bind(this.document)() : value;
+            });
+            const computedValues = yield Promise.all(computedPromises);
+            computedValues.forEach((value, index) => {
+                const property = computed[index];
+                json[property] = value;
+            });
+            const associationPromises = this.associations.map((as) => {
+                const association = this.Model.associate(as);
+                const nestedDocument = this.document[association._as];
+                if (!nestedDocument)
+                    return null;
+                const NestedSerializer = this.Serializer(association.foreignModelName);
+                if (nestedDocument instanceof Array) {
+                    const childrenFields = this.fields.children(as);
+                    json[association.as] = nestedDocument.map(aNestedDocument => ({}));
+                    return json[association.as].map((nestedJson, index) => {
+                        const nestedSerializer = new NestedSerializer(nestedDocument[index], childrenFields);
+                        return nestedSerializer.toJson(nestedJson);
+                    });
+                }
+                else {
+                    json[association.as] = {};
+                    const nestedSerializer = new NestedSerializer(nestedDocument, this.fields.children(as));
+                    return nestedSerializer.toJson(json[association.as]);
+                }
+            });
+            yield Promise.all(_.flatten(associationPromises));
+            return json;
         });
-        return json;
     }
 }
 exports.Serializer = Serializer;

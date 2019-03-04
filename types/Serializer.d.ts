@@ -23,6 +23,6 @@ export declare class Serializer {
     readonly associations: string[];
     readonly computed: string[];
     Serializer(modelName: string): any;
-    toJson(json: any): any;
+    toJson(json: any): Promise<any>;
 }
 //# sourceMappingURL=Serializer.d.ts.map

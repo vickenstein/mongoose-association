@@ -11,6 +11,10 @@ riderSchema.methods.doubleAge = function() {
   return this.age * 2
 }
 
+riderSchema.methods.asyncAge = async function() {
+  return this.age * 2
+}
+
 riderSchema.belongsTo('Bike').index(1, { sparse: true })
 riderSchema.belongsTo('Helmet')
 
@@ -21,7 +25,6 @@ const bikeSchema = new Schema({
 })
 
 bikeSchema.methods.uppercaseColor = function() {
-  console.log(this, this.color)
   return this.color.toUpperCase()
 }
 

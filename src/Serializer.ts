@@ -94,7 +94,7 @@ export class Serializer {
     return ClassFinder.classFor(modelName, 'Serializer')
   }
 
-  toJson(json: any) {
+  async toJson(json: any) {
     if (!json) return json
     if (!this.document) return this.document
     if (!this.isLean) {
@@ -107,12 +107,19 @@ export class Serializer {
       })
     }
 
-    this.computed.forEach(property => {
+    const { computed } = this
+    const computedPromises = computed.map(property => {
       const value = this.document[property]
-      json[property] = _.isFunction(value) ? value.bind(this.document)() : value
+      return _.isFunction(value) ? value.bind(this.document)() : value
+    })
+    const computedValues = await Promise.all(computedPromises)
+    computedValues.forEach((value, index) => {
+      const property = computed[index]
+      json[property] = value
     })
 
-    this.associations.forEach((as: string) => {
+
+    const associationPromises = this.associations.map((as: string) => {
 
       const association = this.Model.associate(as)
       const nestedDocument = this.document[association._as]
@@ -124,16 +131,19 @@ export class Serializer {
       if (nestedDocument instanceof Array) {
         const childrenFields = this.fields.children(as)
         json[association.as] = nestedDocument.map(aNestedDocument => ({}))
-        json[association.as].forEach((nestedJson: any, index: number) => {
+        return json[association.as].map((nestedJson: any, index: number) => {
           const nestedSerializer = new NestedSerializer(nestedDocument[index], childrenFields)
-          nestedSerializer.toJson(nestedJson)
+          return nestedSerializer.toJson(nestedJson)
         })
       } else {
         json[association.as] = {}
         const nestedSerializer = new NestedSerializer(nestedDocument, this.fields.children(as))
-        nestedSerializer.toJson(json[association.as])
+        return nestedSerializer.toJson(json[association.as])
       }
     })
+
+    await Promise.all(_.flatten(associationPromises))
+
     return json
   }
 

@@ -16,6 +16,6 @@ module.exports = class RiderSerializer extends Serializer {
   }
 
   static get computed() {
-    return ['doubleAge']
+    return ['doubleAge', 'asyncAge']
   }
 }
