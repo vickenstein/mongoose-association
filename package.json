@@ -1,6 +1,6 @@
 {
   "name": "mongoose-association",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "description": "A cleaner and faster way to setup mongoose populate with virtual field",
   "main": "dist/index.js",
   "types": "types/index.d.ts",
@@ -25,6 +25,9 @@
     "url": "https://github.com/vickenstein/mongoose-association/issues"
   },
   "homepage": "https://github.com/vickenstein/mongoose-association#readme",
+  "peerDependencies": {
+    "mongoose": "^5.4.0"
+  },
   "devDependencies": {
     "@types/inflection": "^1.5.28",
     "@types/lodash": "^4.14.116",
@@ -44,7 +47,6 @@
   "dependencies": {
     "inflection": "^1.12.0",
     "lodash": "^4.17.10",
-    "mongoose": "^5.4.0",
     "node-association": "0.0.9"
   }
 }
