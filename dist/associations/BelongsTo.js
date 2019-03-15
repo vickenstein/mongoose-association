@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const mongoose = require("mongoose");
 const Association_1 = require("./Association");
 const OPTIONS = { localField: 'name of the property to store the reference id' };
 class BelongsTo extends Association_1.Association {
@@ -17,6 +18,8 @@ class BelongsTo extends Association_1.Association {
     }
     findFor(document) {
         if (document instanceof Array) {
+            if (!document.length)
+                return (new mongoose.Query()).noop();
             return this.findManyFor(document);
         }
         return BelongsTo.findOne({

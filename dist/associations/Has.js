@@ -88,6 +88,8 @@ class Has extends Association_1.Association {
     }
     findFor(document) {
         if (document instanceof Array) {
+            if (!document.length)
+                return (new mongoose.Query()).noop();
             return this.findManyFor(document);
         }
         if (this.through) {

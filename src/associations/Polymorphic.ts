@@ -30,6 +30,7 @@ export class Polymorphic extends Association {
 
   findFor(document: any) {
     if (document instanceof Array) {
+      if (!document.length) return (new mongoose.Query()).noop()
       return this.findManyFor(document)
     }
     const { localField, typeField } = this

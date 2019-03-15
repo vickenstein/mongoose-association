@@ -32,6 +32,7 @@ declare module 'mongoose' {
   export interface DocumentQuery<T, DocType extends Document> {
     populateAssociation(options: any): DocumentQuery<any, any>
     collectAssociation(options: any): DocumentQuery<any, any>
+    noop(): DocumentQuery<any, any>
     model: mongoose.Model<any>
     _model: mongoose.Model<any>
     _conditions: any
@@ -157,6 +158,13 @@ const patchQueryPrototype = (Query: any) => {
         })
       }
     })
+  }
+
+  Query.prototype.noop = function noop() {
+    this.exec = function exec(options: any, callback?: (err: any, res: any) => void): any {
+      return Promise.resolve([])
+    }
+    return this
   }
 
   Query.prototype._explain = function _explain() {

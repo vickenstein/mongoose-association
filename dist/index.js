@@ -109,6 +109,12 @@ const patchQueryPrototype = (Query) => {
             }
         });
     };
+    Query.prototype.noop = function noop() {
+        this.exec = function exec(options, callback) {
+            return Promise.resolve([]);
+        };
+        return this;
+    };
     Query.prototype._explain = function _explain() {
         const withDeleted = this._withDeleted;
         if (!withDeleted)

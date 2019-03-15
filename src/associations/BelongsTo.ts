@@ -22,6 +22,7 @@ export class BelongsTo extends Association {
 
   findFor(document: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any> {
     if (document instanceof Array) {
+      if (!document.length) return (new mongoose.Query()).noop()
       return this.findManyFor(document)
     }
 
