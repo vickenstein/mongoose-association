@@ -43,6 +43,17 @@ export class HasMany extends Has {
     }
   }
 
+  get foreignField() {
+    if (this.nested) {
+      return this.define(
+        'foreignField',
+        '_id'
+      )
+    } else {
+      return this.define('foreignField', this.withAssociation.localField)
+    }
+  }
+
   findFor(document: any) {
     if (this.nested) {
       return this.findNestedFor(document)
@@ -63,21 +74,21 @@ export class HasMany extends Has {
       return this.findManyNestedFor(document)
     }
 
-    const { foreignModelName: modelName, localField } = this
+    const { foreignModelName: modelName, localField, foreignField } = this
 
     return HasMany.find({
       modelName,
-      localField: '_id',
+      localField: foreignField,
       localFieldValue: document[localField]
     })
   }
 
   findManyNestedFor(documents: any[]) {
-    const { foreignModelName: modelName, localField } = this
+    const { foreignModelName: modelName, localField, foreignField } = this
 
     return HasMany.find({
       modelName,
-      localField: '_id',
+      localField: foreignField,
       localFieldValue: _.flatten(_.map(documents, document => document[localField]))
     })
   }

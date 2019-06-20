@@ -171,16 +171,16 @@ class Has extends Association_1.Association {
             localFieldValue: documents.map(document => document._id),
         });
     }
-    aggregateLookUpMatch(options, through) {
+    aggregateLookUpMatch(options) {
         let $match = {};
-        if (through) {
-            $match = { $expr: { $eq: ['$$localField', this.throughAsAssociation.$foreignField] } };
+        if (this.nested) {
+            $match = { $expr: { $in: ['$_id', '$$localField'] } };
         }
         else {
             $match = super.aggregateLookUpMatch(options);
-        }
-        if (this.withAssociation.associationType === 'polymorphic') {
-            $match[this.withAssociation.typeField] = this.modelName;
+            if (this.withAssociation.associationType === 'polymorphic') {
+                $match[this.withAssociation.typeField] = this.modelName;
+            }
         }
         return $match;
     }

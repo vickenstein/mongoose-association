@@ -7,6 +7,7 @@ export declare class HasMany extends Has {
     readonly as: any;
     readonly throughWith: any;
     readonly localField: any;
+    readonly foreignField: any;
     findFor(document: any): any;
     findManyFor(documents: any[]): any;
     findNestedFor(document: any): mongoose.DocumentQuery<any, any>;

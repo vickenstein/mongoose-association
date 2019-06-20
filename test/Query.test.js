@@ -11,6 +11,7 @@ const Car = mongoose.model('Car')
 const Rating = mongoose.model('Rating')
 const Part = mongoose.model('Part')
 const Assembly = mongoose.model('Assembly')
+const License = mongoose.model('License')
 
 const BIKECOUNT = 5
 const PARTCOUNT = 5
@@ -28,14 +29,20 @@ const helmets = []
 const parts = []
 const bikeAssemblies = []
 const carAssemblies = []
+const licenses = []
 
 async function setupData() {
   for(let i = 0; i < PARTCOUNT; i++) {
     const part = await new Part().save()
     parts.push(part)
+    const license = await new License().save()
+    licenses.push(license)
   }
   for(let i = 0; i < BIKECOUNT; i++) {
-    const bike = await new Bike({ _id: ObjectIds[i] }).save()
+    const bike = await new Bike({
+      _id: ObjectIds[i],
+      licenses: [licenses[i], licenses[(i + 2) % PARTCOUNT]]
+    }).save()
     bikes.push(bike)
     const car = await new Car({ _id: ObjectIds[i] }).save()
     cars.push(car)
@@ -75,6 +82,17 @@ describe("mongose standard queries, find, findOne with population", () => {
   })
 
   describe('#findOne()', () => {
+    it('get the associated nested hasMany objects', async () => {
+      const result = await Bike.findOne({ _id: bikes[0]._id }).populateAssociation('licenses')
+      assert.strictEqual(result.constructor, Bike)
+      let mongooseRequestCount = mongoose.requestCount
+      const licenses = await result.licenses
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
+    it.only('get the associated nested hasMany objects through another mdoel', async () => {
+      debugger
+      const result = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('bike.licenses')
+    })
     it('get the associated belongsTo object', async () => {
       const result = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike')
       assert.strictEqual(result.constructor, Rider)

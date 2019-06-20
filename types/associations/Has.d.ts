@@ -24,7 +24,7 @@ export declare class Has extends Association {
     readonly foreignField: any;
     findFor(document: any): any;
     findManyFor(documents: any[]): any;
-    aggregateLookUpMatch(options: IAggregateOptions, through?: string): any;
+    aggregateLookUpMatch(options: IAggregateOptions): any;
     aggregateThroughLookUpMatch(options?: IAggregateOptions): any;
     aggregateLookUp(aggregate: mongoose.Aggregate<any>, options?: IAggregateOptions): void;
 }

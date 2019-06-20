@@ -49,15 +49,20 @@ export class Populator {
     const _field = Association.cacheKey(field)
     const association = model.associate(field)
     const results = await association.findFor(documents).populateAssociation(childrenFields)
-    const enumerateMethod = association.associationType === 'hasMany' ? _.groupBy : _.keyBy
+    const enumerateMethod = association.associationType === 'hasMany' && !association.nested ? _.groupBy : _.keyBy
     const { localField } = association
     let { foreignField } = association
     if (association.through) {
       foreignField = (document: any) => document[association.throughAsAssociation._with][foreignField]
     }
+    debugger
     const indexedResults = enumerateMethod(results, foreignField)
     documents.forEach((document: any) => {
-      document[_field] = indexedResults[document[localField]]
+      if (association.nested) {
+        document[_field] = document[localField].map((id: string) => indexedResults[id])
+      } else {
+        document[_field] = indexedResults[document[localField]]
+      }
     })
     return documents
   }

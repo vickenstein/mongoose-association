@@ -31,6 +31,14 @@ class HasMany extends Has_1.Has {
             return super.localField;
         }
     }
+    get foreignField() {
+        if (this.nested) {
+            return this.define('foreignField', '_id');
+        }
+        else {
+            return this.define('foreignField', this.withAssociation.localField);
+        }
+    }
     findFor(document) {
         if (this.nested) {
             return this.findNestedFor(document);
@@ -49,18 +57,18 @@ class HasMany extends Has_1.Has {
                 return (new mongoose.Query()).noop();
             return this.findManyNestedFor(document);
         }
-        const { foreignModelName: modelName, localField } = this;
+        const { foreignModelName: modelName, localField, foreignField } = this;
         return HasMany.find({
             modelName,
-            localField: '_id',
+            localField: foreignField,
             localFieldValue: document[localField]
         });
     }
     findManyNestedFor(documents) {
-        const { foreignModelName: modelName, localField } = this;
+        const { foreignModelName: modelName, localField, foreignField } = this;
         return HasMany.find({
             modelName,
-            localField: '_id',
+            localField: foreignField,
             localFieldValue: _.flatten(_.map(documents, document => document[localField]))
         });
     }

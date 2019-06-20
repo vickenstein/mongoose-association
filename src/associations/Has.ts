@@ -217,15 +217,15 @@ export class Has extends Association {
     })
   }
 
-  aggregateLookUpMatch(options: IAggregateOptions, through?: string) {
+  aggregateLookUpMatch(options: IAggregateOptions) {
     let $match: any = {}
-    if (through) {
-      $match = { $expr: { $eq: ['$$localField', this.throughAsAssociation.$foreignField] } }
+    if (this.nested) {
+      $match = { $expr: { $in: ['$_id', '$$localField']} }
     } else {
       $match = super.aggregateLookUpMatch(options)
-    }
-    if (this.withAssociation.associationType === 'polymorphic') {
-      $match[this.withAssociation.typeField] = this.modelName
+      if (this.withAssociation.associationType === 'polymorphic') {
+        $match[this.withAssociation.typeField] = this.modelName
+      }
     }
     return $match
   }

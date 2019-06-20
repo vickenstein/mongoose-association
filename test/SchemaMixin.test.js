@@ -75,7 +75,7 @@ describe("assign association class", () => {
     return setupData()
   })
 
-  describe("#associatesociation()", () => {
+  describe("#associate()", () => {
     it('find already defined associations', () => {
       const testSchema = new Schema()
       assert.throws(() => { testSchema.associate('test', 'test') }, 'this schema does not have any associations')
