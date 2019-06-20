@@ -178,17 +178,24 @@ export class SchemaMixin extends mongoose.Schema {
     }
   }
 
-  hasMany(foreignModelName: string, options: IOptions = {}) {
+  hasMany(foreignModelName: string, options: IOptions = {}, schemaOptions: any = {}) {
     if (!this.associations) this.associations = new Associations(this)
     const association = this.associations.add('hasMany', _.merge({}, options, { foreignModelName }))
-
+    if (association.nested) this.defineHasManySchema(association, schemaOptions)
     this.defineHasManyVirtual(association)
     if (association.dependent) this.defineDependentHook(association)
     return association
   }
 
+  defineHasManySchema({ foreignModelName, localField }: IOptions, schemaOptions: any = {}) {
+    _.merge(schemaOptions, { type: [ObjectId], ref: foreignModelName })
+    const schema: any = {}
+    schema[localField] = schemaOptions
+    this.add(schema)
+  }
+
   defineHasManyVirtual(association: Association) {
-    const { as, _as, $as, $fetch, $unset } = association
+    const { as, _as, $as, $fetch, $unset, nested } = association
     this.virtual(as).get(async function get() {
       if (!Object.prototype.hasOwnProperty.call(this, _as)) this[_as] = await this[$fetch]()
       return this[_as]

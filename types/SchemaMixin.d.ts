@@ -22,7 +22,8 @@ export declare class SchemaMixin extends mongoose.Schema {
     definePolymorphicVirtual(association: Association): void;
     hasOne(foreignModelName: string, options?: IOptions): Association;
     defineHasOneVirtual(association: Association): void;
-    hasMany(foreignModelName: string, options?: IOptions): Association;
+    hasMany(foreignModelName: string, options?: IOptions, schemaOptions?: any): Association;
+    defineHasManySchema({ foreignModelName, localField }: IOptions, schemaOptions?: any): void;
     defineHasManyVirtual(association: Association): void;
     defineDependentHook(association: Association): void;
     softDeleteable(options?: ISoftDeleteableOptions): void;

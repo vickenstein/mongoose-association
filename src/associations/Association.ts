@@ -19,6 +19,7 @@ export interface IOptions {
   throughWith?: string,
   typeField?: string,
   dependent?: string,
+  nested?: boolean
 }
 
 export interface IAggregateOptions {
@@ -41,6 +42,7 @@ export class Association {
   throughModel: mongoose.Model<any>
   isReference: boolean
   dependent: string
+  nested: boolean
 
   ['constructor']: typeof Association
 

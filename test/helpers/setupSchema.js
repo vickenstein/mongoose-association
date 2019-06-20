@@ -154,6 +154,11 @@ alienSchema.hasOne('Car', {
   as: 'ratedCar'
 })
 
+const licenseSchema = new Schema()
+const test = riderSchema.hasMany('License', {
+  nested: true
+})
+
 const Rider = mongoose.model('Rider', riderSchema)
 const Bike = mongoose.model('Bike', bikeSchema)
 const Helmet = mongoose.model('Helmet', helmetSchema)
@@ -163,5 +168,5 @@ const Car = mongoose.model('Car', carSchema)
 const Assembly = mongoose.model('Assembly', assemblySchema)
 const Part = mongoose.model('Part', partSchema)
 const Rating = mongoose.model('Rating', ratingSchema)
-
+const License = mongoose.model('License', licenseSchema)
 module.exports = () => {}

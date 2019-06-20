@@ -10,6 +10,7 @@ export interface IOptions {
     throughWith?: string;
     typeField?: string;
     dependent?: string;
+    nested?: boolean;
 }
 export interface IAggregateOptions {
     documents?: any;
@@ -29,6 +30,7 @@ export declare class Association {
     throughModel: mongoose.Model<any>;
     isReference: boolean;
     dependent: string;
+    nested: boolean;
     ['constructor']: typeof Association;
     static findOne({ modelName, localField, localFieldValue, typeField, type }: {
         modelName: string;
