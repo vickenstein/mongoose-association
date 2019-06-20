@@ -12,6 +12,7 @@ const Bike = mongoose.model('Bike')
 const Car = mongoose.model('Car')
 const Assembly = mongoose.model('Assembly')
 const Part = mongoose.model('Part')
+const License = mongoose.model('License')
 const BIKECOUNT = 5
 const PARTCOUNT = 5
 const PARTPERBIKE = 2
@@ -27,14 +28,20 @@ const riders = []
 const parts = []
 const bikeAssemblies = []
 const carAssemblies = []
+const licenses = []
 
 async function setupData() {
   for(let i = 0; i < PARTCOUNT; i++) {
     const part = await new Part().save()
     parts.push(part)
+    const license = await new License().save()
+    licenses.push(license)
   }
   for(let i = 0; i < BIKECOUNT; i++) {
-    const bike = await new Bike({ _id: ObjectIds[i] }).save()
+    const bike = await new Bike({
+      _id: ObjectIds[i],
+      licenses: [licenses[i], licenses[(i + 2) % PARTCOUNT]]
+    }).save()
     bikes.push(bike)
     const car = await new Car({ _id: ObjectIds[i] }).save()
     cars.push(car)
@@ -66,7 +73,7 @@ describe("Some shared functionality of the has reference", () => {
   })
 
   describe('#findFor()', () => {
-    it('get the associated belongsTo object', async () => {
+    it('get the associated belongsTo objects', async () => {
       const part = await Part.findOne({ _id: parts[0]._id })
       const assemblies = await part.assemblies
       assert.isOk(assemblies)
@@ -74,7 +81,7 @@ describe("Some shared functionality of the has reference", () => {
       assert.strictEqual(assemblies.length, PARTPERBIKE * 2)
     })
 
-    it('get the associated polymorphic object', async () => {
+    it('get the associated polymorphic objects', async () => {
       const bike = await Bike.findOne({ _id: ObjectIds[0] })
       const assemblies = await bike.assemblies
       assert.isOk(assemblies)
@@ -97,6 +104,14 @@ describe("Some shared functionality of the has reference", () => {
       assert.isOk(parts instanceof Collection)
       assert.strictEqual(parts.length, PARTPERBIKE)
     })
+
+    it('get the associated nested objects', async () => {
+      const bike = await Bike.findOne({ _id: bikes[0]._id })
+      const licenses = await bike.licenses
+      assert.isOk(licenses)
+      assert.isOk(licenses instanceof Collection)
+      assert.strictEqual(licenses.length, 2)
+    })
   })
 
   describe("findManyFor()", () => {
@@ -112,6 +127,11 @@ describe("Some shared functionality of the has reference", () => {
       const results = await aggregate
       assert.strictEqual(results.length, BIKECOUNT * PARTPERBIKE)
       assert.strictEqual(results[0].constructor, Part)
+    })
+    it('get the associated nested hasMany', async () => {
+      const hasMany = Bike.associate('licenses')
+      const licenses = await hasMany.findManyFor(bikes)
+      assert.strictEqual(licenses.length, PARTCOUNT)
     })
   })
 

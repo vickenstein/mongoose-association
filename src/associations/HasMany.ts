@@ -1,3 +1,5 @@
+import * as _ from 'lodash'
+import * as mongoose from 'mongoose'
 import * as inflection from 'inflection'
 import { Has } from './Has'
 
@@ -39,5 +41,44 @@ export class HasMany extends Has {
     } else {
       return super.localField
     }
+  }
+
+  findFor(document: any) {
+    if (this.nested) {
+      return this.findNestedFor(document)
+    }
+    return super.findFor(document)
+  }
+
+  findManyFor(documents: any[]) {
+    if (this.nested) {
+      return this.findManyNestedFor(documents)
+    }
+    return super.findManyFor(documents)
+  }
+
+  findNestedFor(document: any) {
+    if (document instanceof Array) {
+      if (!document.length) return (new mongoose.Query()).noop()
+      return this.findManyNestedFor(document)
+    }
+
+    const { foreignModelName: modelName, localField } = this
+
+    return HasMany.find({
+      modelName,
+      localField: '_id',
+      localFieldValue: document[localField]
+    })
+  }
+
+  findManyNestedFor(documents: any[]) {
+    const { foreignModelName: modelName, localField } = this
+
+    return HasMany.find({
+      modelName,
+      localField: '_id',
+      localFieldValue: _.flatten(_.map(documents, document => document[localField]))
+    })
   }
 }

@@ -186,7 +186,7 @@ class SchemaMixin extends mongoose.Schema {
         this.add(schema);
     }
     defineHasManyVirtual(association) {
-        const { as, _as, $as, $fetch, $unset, nested } = association;
+        const { as, _as, $as, $fetch, $unset, nested, localField } = association;
         this.virtual(as).get(function get() {
             return __awaiter(this, void 0, void 0, function* () {
                 if (!Object.prototype.hasOwnProperty.call(this, _as))
@@ -194,6 +194,17 @@ class SchemaMixin extends mongoose.Schema {
                 return this[_as];
             });
         });
+        if (nested) {
+            this.virtual(as).set(function set(value) {
+                const values = value instanceof Array ? value : [value];
+                const areValuesMongooseModels = !!_.reject(values, (value) => {
+                    return value instanceof association.foreignModel;
+                }).length;
+                if (areValuesMongooseModels)
+                    this[_as] = values;
+                this[localField] = values;
+            });
+        }
         this.methods[$fetch] = function fetch() {
             return association.findFor(this).collectAssociation({
                 document: this,

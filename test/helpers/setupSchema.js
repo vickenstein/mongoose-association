@@ -155,7 +155,7 @@ alienSchema.hasOne('Car', {
 })
 
 const licenseSchema = new Schema()
-const test = riderSchema.hasMany('License', {
+bikeSchema.hasMany('License', {
   nested: true
 })
 
