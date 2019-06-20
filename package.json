@@ -6,6 +6,7 @@
   "types": "types/index.d.ts",
   "scripts": {
     "test": "gulp package && mocha --recursive --exit",
+    "test-inspect": "gulp package && mocha --recursive --exit --inspect=0.0.0.0:9229 --debug-brk",
     "lint": "node_modules/.bin/tslint --project tsconfig.json"
   },
   "repository": {

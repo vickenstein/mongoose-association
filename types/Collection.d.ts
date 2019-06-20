@@ -11,6 +11,7 @@ export declare class Collection<T> extends Array<T> {
     static collect<T>(documents: Array<T>, options: IOptions): Collection<T>;
     _push(...documents: Array<T>): void;
     pushDocument(...foreignObjects: any[]): Promise<any>;
+    pushNestedDocument(options: any, ...foreignObjects: any[]): Promise<any[]>;
     create(attributes: any, options: any): Promise<any>;
     createMany(attributes: any[], options: any): Promise<T[]>;
 }

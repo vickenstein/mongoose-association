@@ -50,17 +50,29 @@ class Collection extends Array {
             return foreignObjects.length === 1 ? foreignObjects[0] : foreignObjects;
         });
     }
+    pushNestedDocument(options, ...foreignObjects) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.document[this.association.localField].push(...foreignObjects);
+            yield this.document.save();
+            return foreignObjects;
+        });
+    }
     create(attributes = {}, options) {
         return __awaiter(this, void 0, void 0, function* () {
             if (attributes instanceof Array)
                 return this.createMany(attributes, options);
             const model = this.association.foreignModel;
-            if (!this.association.through) {
+            if (!this.association.through && !this.association.nested) {
                 const { as } = this.association.withAssociation;
                 attributes[as] = this.document;
             }
             const foreignObject = yield model.create(attributes, options);
-            this._push(foreignObject);
+            if (this.association.nested) {
+                yield this.pushNestedDocument(options, foreignObject);
+            }
+            else {
+                this._push(foreignObject);
+            }
             if (this.association.through) {
                 const throughAttributes = {};
                 throughAttributes[this.association.throughAsAssociation.as] = foreignObject;
@@ -73,14 +85,19 @@ class Collection extends Array {
     createMany(attributes = [], options) {
         return __awaiter(this, void 0, void 0, function* () {
             const model = this.association.foreignModel;
-            if (!this.association.through) {
+            if (!this.association.through && !this.association.nested) {
                 attributes.forEach(attribute => {
                     const { as } = this.association.withAssociation;
                     attribute[as] = this.document;
                 });
             }
             const foreignObjects = yield model.insertMany(attributes, options);
-            this._push(...foreignObjects);
+            if (this.association.nested) {
+                yield this.pushNestedDocument(options, ...foreignObjects);
+            }
+            else {
+                this._push(...foreignObjects);
+            }
             if (this.association.through) {
                 const throughAttributes = foreignObjects.map(foreignObject => {
                     const throughAttribute = {};

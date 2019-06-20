@@ -54,15 +54,25 @@ export class Collection<T> extends Array<T> {
     return foreignObjects.length === 1 ? foreignObjects[0] : foreignObjects
   }
 
+  async pushNestedDocument(options: any, ...foreignObjects: any[]) {
+    this.document[this.association.localField].push(...foreignObjects)
+    await this.document.save()
+    return foreignObjects
+  }
+
   async create(attributes: any = {}, options: any) {
     if (attributes instanceof Array) return this.createMany(attributes, options)
     const model = this.association.foreignModel
-    if (!this.association.through) {
+    if (!this.association.through && !this.association.nested) {
       const { as } = this.association.withAssociation
       attributes[as] = this.document
     }
     const foreignObject = await model.create(attributes, options)
-    this._push(foreignObject)
+    if (this.association.nested) {
+      await this.pushNestedDocument(options, foreignObject)
+    } else {
+      this._push(foreignObject)
+    }
     if (this.association.through) {
       const throughAttributes: any = {}
       throughAttributes[this.association.throughAsAssociation.as] = foreignObject
@@ -74,14 +84,18 @@ export class Collection<T> extends Array<T> {
 
   async createMany(attributes: any[] = [], options: any) {
     const model = this.association.foreignModel
-    if (!this.association.through) {
+    if (!this.association.through && !this.association.nested) {
       attributes.forEach(attribute => {
         const { as } = this.association.withAssociation
         attribute[as] = this.document
       })
     }
     const foreignObjects: Array<T> = await model.insertMany(attributes, options)
-    this._push(...foreignObjects)
+    if (this.association.nested) {
+      await this.pushNestedDocument(options, ...foreignObjects)
+    } else {
+      this._push(...foreignObjects)
+    }
     if (this.association.through) {
       const throughAttributes = foreignObjects.map(foreignObject => {
         const throughAttribute: any = {}

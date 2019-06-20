@@ -8,6 +8,8 @@ const Car = mongoose.model('Car')
 const Assembly = mongoose.model('Assembly')
 const Part = mongoose.model('Part')
 const Rating = mongoose.model('Rating')
+const Bike = mongoose.model('Bike')
+const License = mongoose.model('License')
 
 describe('A collection of record that is affiliated with an specific has many association', () => {
   before(() => {
@@ -53,6 +55,18 @@ describe('A collection of record that is affiliated with an specific has many as
       const parts = await car.fetch('parts')
       assert.strictEqual(parts.length, 1)
     })
+    it('can create new hasMany nested', async () => {
+      const bike = await new Bike().save()
+      const hasManyLicenses = Bike.associate('licenses')
+      const collection = Collection.collect([], {
+        document: bike,
+        association: hasManyLicenses
+      })
+      const license = await collection.create()
+      assert.strictEqual(license.constructor, License)
+      const licenses = await bike.fetch('licenses')
+      assert.strictEqual(licenses.length, 1)
+    })
   })
 
   describe('#create()', () => {
@@ -82,6 +96,21 @@ describe('A collection of record that is affiliated with an specific has many as
       assert.strictEqual(collection.length, 3)
       const sameAssemblies = await car.fetch('assemblies')
       assert.strictEqual(sameAssemblies.length, 3)
+    })
+
+    it('create multiple hasMany nested records', async () => {
+      const bike = await new Bike().save()
+      const hasManyLicenses = Bike.associate('licenses')
+      const collection = Collection.collect([], {
+        document: bike,
+        association: hasManyLicenses
+      })
+      const licenses = await collection.create([{}, {}, {}])
+      licenses.forEach(license => {
+        assert.strictEqual(license.constructor, License)
+      })
+      const sameLicenses = await bike.fetch('licenses')
+      assert.strictEqual(sameLicenses.length, 3)
     })
 
     it('create a single hasMany through record', async () => {
