@@ -19,6 +19,12 @@ class Collection extends Array {
         array.association = options.association;
         return array;
     }
+    _spliceIn(position, ...documents) {
+        super.splice(position, 0, ...documents);
+    }
+    _spliceOut(position, count) {
+        super.splice(position, count);
+    }
     _push(...documents) {
         super.push(...documents);
     }
@@ -50,11 +56,37 @@ class Collection extends Array {
             return foreignObjects.length === 1 ? foreignObjects[0] : foreignObjects;
         });
     }
-    pushNestedDocument(options, ...foreignObjects) {
+    addNestedDocument(options = {}, ...foreignObjects) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.document[this.association.localField].push(...foreignObjects);
-            yield this.document.save();
+            const hasPosition = typeof options.position === 'number';
+            const { isSynchronized } = this;
+            if (hasPosition) {
+                this.document[this.association.localField].splice(options.position, 0, ...foreignObjects);
+                if (isSynchronized)
+                    this._spliceIn(options.position, ...foreignObjects);
+            }
+            else {
+                this.document[this.association.localField].push(...foreignObjects);
+                if (isSynchronized)
+                    this._push(...foreignObjects);
+            }
+            yield this.document.save(options);
             return foreignObjects;
+        });
+    }
+    removeNestedDocument(options, ...foreignObjects) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.document[this.association.localField].splice();
+        });
+    }
+    get isSynchronized() {
+        return !this.document[this.association.localField].some((id, index) => {
+            console.log(this[index] && this[index].id, id);
+            return (this[index] && this[index].id) !== id.toString();
+        });
+    }
+    synchronize() {
+        return __awaiter(this, void 0, void 0, function* () {
         });
     }
     create(attributes = {}, options) {
@@ -68,7 +100,7 @@ class Collection extends Array {
             }
             const foreignObject = yield model.create(attributes, options);
             if (this.association.nested) {
-                yield this.pushNestedDocument(options, foreignObject);
+                yield this.addNestedDocument(options, foreignObject);
             }
             else {
                 this._push(foreignObject);
@@ -93,7 +125,7 @@ class Collection extends Array {
             }
             const foreignObjects = yield model.insertMany(attributes, options);
             if (this.association.nested) {
-                yield this.pushNestedDocument(options, ...foreignObjects);
+                yield this.addNestedDocument(options, ...foreignObjects);
             }
             else {
                 this._push(...foreignObjects);

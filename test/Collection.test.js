@@ -208,4 +208,62 @@ describe('A collection of record that is affiliated with an specific has many as
       assert.strictEqual(assemblies.length, 1)
     })
   })
+
+  describe('#isSynchronized', () => {
+    it('return false for collection data not matching source data', async () => {
+      const licenses = await Promise.all([
+        new License().save(),
+        new License().save(),
+        new License().save()
+      ])
+      const bike = await new Bike({
+        licenses
+      }).save()
+      const hasManyLicenses = Bike.associate('licenses')
+      const collection = Collection.collect([], {
+        document: bike,
+        association: hasManyLicenses
+      })
+      assert.strictEqual(collection.isSynchronized, false)
+    })
+    it('return true for collection data matching the source data', async () => {
+      const licenses = await Promise.all([
+        new License().save(),
+        new License().save(),
+        new License().save()
+      ])
+      const bike = await new Bike({
+        licenses
+      }).save()
+      const hasManyLicenses = Bike.associate('licenses')
+      const collection = Collection.collect(licenses, {
+        document: bike,
+        association: hasManyLicenses
+      })
+      assert.strictEqual(collection.isSynchronized, true)
+    })
+  })
+
+  describe('#pushNestedDocument', () => {
+    it('is able to push a nested document to specific position', async () => {
+      const licenses = await Promise.all([
+        new License().save(),
+        new License().save(),
+        new License().save()
+      ])
+      const licensesToAdd = await new License().save()
+      const bike = await new Bike({
+        licenses
+      }).save()
+      const hasManyLicenses = Bike.associate('licenses')
+      const collection = Collection.collect(licenses, {
+        document: bike,
+        association: hasManyLicenses
+      })
+      collection.addNestedDocument({ position: 1 }, licensesToAdd)
+      const sameLicenses = await bike.fetch('licenses')
+      assert.strictEqual(sameLicenses.length, 4)
+      assert.strictEqual(sameLicenses[1].id, licensesToAdd.id)
+    })
+  })
 })

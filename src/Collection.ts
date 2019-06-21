@@ -23,6 +23,14 @@ export class Collection<T> extends Array<T> {
     return array
   }
 
+  _spliceIn(position: number, ...documents: Array<T>) {
+    super.splice(position, 0, ...documents)
+  }
+
+  _spliceOut(position: number, count: number) {
+    super.splice(position, count)
+  }
+
   _push(...documents: Array<T>) {
     super.push(...documents)
   }
@@ -54,10 +62,28 @@ export class Collection<T> extends Array<T> {
     return foreignObjects.length === 1 ? foreignObjects[0] : foreignObjects
   }
 
-  async pushNestedDocument(options: any, ...foreignObjects: any[]) {
-    this.document[this.association.localField].push(...foreignObjects)
-    await this.document.save()
+  async addNestedDocument(options: any = {}, ...foreignObjects: any[]) {
+    const hasPosition = typeof options.position === 'number'
+    const { isSynchronized } = this
+    if (hasPosition) {
+      this.document[this.association.localField].splice(options.position, 0, ...foreignObjects)
+      if (isSynchronized) this._spliceIn(options.position, ...foreignObjects)
+    } else {
+      this.document[this.association.localField].push(...foreignObjects)
+      if (isSynchronized) this._push(...foreignObjects)
+    }
+    await this.document.save(options)
     return foreignObjects
+  }
+
+  async removeNestedDocument(options: any, ...foreignObjects: any[]) {
+    // todo: need to add this functionality
+  }
+
+  get isSynchronized() {
+    return !this.document[this.association.localField].some((id, index) => {
+      return (this[index] && this[index].id) !== id.toString()
+    })
   }
 
   async create(attributes: any = {}, options: any) {
@@ -69,7 +95,7 @@ export class Collection<T> extends Array<T> {
     }
     const foreignObject = await model.create(attributes, options)
     if (this.association.nested) {
-      await this.pushNestedDocument(options, foreignObject)
+      await this.addNestedDocument(options, foreignObject)
     } else {
       this._push(foreignObject)
     }
@@ -92,7 +118,7 @@ export class Collection<T> extends Array<T> {
     }
     const foreignObjects: Array<T> = await model.insertMany(attributes, options)
     if (this.association.nested) {
-      await this.pushNestedDocument(options, ...foreignObjects)
+      await this.addNestedDocument(options, ...foreignObjects)
     } else {
       this._push(...foreignObjects)
     }

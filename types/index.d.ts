@@ -18,6 +18,7 @@ declare module 'mongoose' {
     interface DocumentQuery<T, DocType extends Document> {
         populateAssociation(options: any): DocumentQuery<any, any>;
         collectAssociation(options: any): DocumentQuery<any, any>;
+        reorder(ids: any): DocumentQuery<any, any>;
         noop(): DocumentQuery<any, any>;
         model: mongoose.Model<any>;
         _model: mongoose.Model<any>;

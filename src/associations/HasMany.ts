@@ -80,7 +80,7 @@ export class HasMany extends Has {
       modelName,
       localField: foreignField,
       localFieldValue: document[localField]
-    })
+    }).reorder(document[localField])
   }
 
   findManyNestedFor(documents: any[]) {

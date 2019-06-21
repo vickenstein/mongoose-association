@@ -58,7 +58,6 @@ class Populator {
             if (association.through) {
                 foreignField = (document) => document[association.throughAsAssociation._with][foreignField];
             }
-            debugger;
             const indexedResults = enumerateMethod(results, foreignField);
             documents.forEach((document) => {
                 if (association.nested) {

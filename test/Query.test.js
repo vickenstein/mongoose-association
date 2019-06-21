@@ -89,9 +89,12 @@ describe("mongose standard queries, find, findOne with population", () => {
       const licenses = await result.licenses
       assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
-    it.only('get the associated nested hasMany objects through another mdoel', async () => {
-      debugger
+    it('get the associated nested hasMany objects through another model', async () => {
       const result = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('bike.licenses')
+      let mongooseRequestCount = mongoose.requestCount
+      const bike = await result.bike
+      const licenses = await bike.licenses
+      assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
     })
     it('get the associated belongsTo object', async () => {
       const result = await Rider.findOne({ _id: riders[0]._id }).populateAssociation('helmet', 'bike')

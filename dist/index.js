@@ -78,11 +78,16 @@ const patchQueryPrototype = (Query) => {
             this.where(condition);
         }
     };
+    Query.prototype.reorder = function reorder(ids) {
+        this._reorder = ids;
+        return this;
+    };
     Query.prototype.exec = function exec(options, callback) {
         const populateAssociation = this._populateAssociation
             && Populator_1.Populator.checkFields(this._populateAssociation);
         const collectAssociation = this._collectAssociation;
         const withDeleted = this._withDeleted;
+        const reorder = this._reorder;
         if (!withDeleted)
             this.checkDeleted();
         if (!populateAssociation && !collectAssociation)
@@ -98,6 +103,10 @@ const patchQueryPrototype = (Query) => {
                 _exec.call(this, options, (error, documents) => {
                     if (error)
                         return reject(error);
+                    if (reorder) {
+                        const documentMap = _.keyBy(documents, 'id');
+                        documents = reorder.map((id) => documentMap[id]);
+                    }
                     if (collectAssociation)
                         documents = Collection_1.Collection.collect(documents, collectAssociation);
                     if (!documents)

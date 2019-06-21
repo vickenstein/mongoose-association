@@ -32,6 +32,7 @@ declare module 'mongoose' {
   export interface DocumentQuery<T, DocType extends Document> {
     populateAssociation(options: any): DocumentQuery<any, any>
     collectAssociation(options: any): DocumentQuery<any, any>
+    reorder(ids: any): DocumentQuery<any, any>
     noop(): DocumentQuery<any, any>
     model: mongoose.Model<any>
     _model: mongoose.Model<any>
@@ -130,11 +131,17 @@ const patchQueryPrototype = (Query: any) => {
     }
   }
 
+  Query.prototype.reorder = function reorder(ids: Array<any>) {
+    this._reorder = ids
+    return this
+  }
+
   Query.prototype.exec = function exec(options: any, callback?: (err: any, res: any) => void) {
     const populateAssociation = this._populateAssociation
       && Populator.checkFields(this._populateAssociation)
     const collectAssociation = this._collectAssociation
     const withDeleted = this._withDeleted
+    const reorder = this._reorder
 
     if (!withDeleted) this.checkDeleted()
 
@@ -150,6 +157,10 @@ const patchQueryPrototype = (Query: any) => {
       } else {
         _exec.call(this, options, (error: any, documents: any) => {
           if (error) return reject(error)
+          if (reorder) {
+            const documentMap = _.keyBy(documents, 'id')
+            documents = reorder.map((id: any) => documentMap[id])
+          }
           if (collectAssociation) documents = Collection.collect(documents, collectAssociation)
           if (!documents) return resolve(documents)
           return Populator.populate(this.model, documents, populateAssociation)

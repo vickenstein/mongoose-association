@@ -62,7 +62,7 @@ class HasMany extends Has_1.Has {
             modelName,
             localField: foreignField,
             localFieldValue: document[localField]
-        });
+        }).reorder(document[localField]);
     }
     findManyNestedFor(documents) {
         const { foreignModelName: modelName, localField, foreignField } = this;
