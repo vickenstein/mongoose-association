@@ -239,9 +239,9 @@ const patchAggregatePrototype = (Aggregate) => {
         return new Promise((resolve, reject) => {
             _exec.call(this, (error, documents) => {
                 if (error)
-                    return reject(error);
+                    return reject(callback ? callback(error) : error);
                 if (!documents)
-                    return resolve(documents);
+                    return resolve(callback ? callback(null, documents) : documents);
                 if (invertAssociation) {
                     documents = documents.map((document) => {
                         const nestedDcoument = document[invertAssociation.to];
@@ -259,12 +259,12 @@ const patchAggregatePrototype = (Aggregate) => {
                         .then(() => {
                         if (singular)
                             [documents] = documents;
-                        return resolve(documents);
+                        return resolve(callback ? callback(null, documents) : documents);
                     });
                 }
                 if (singular)
                     [documents] = documents;
-                return resolve(documents);
+                return resolve(callback ? callback(null, documents) : documents);
             });
         });
     };

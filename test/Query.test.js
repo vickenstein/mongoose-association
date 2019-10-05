@@ -192,6 +192,11 @@ describe("mongose standard queries, find, findOne with population", () => {
   })
 
   describe('#aggregate()', () => {
+    it('aggregate with old school syntax', (next) => {
+      Rider.aggregate([{ $match: { age: 5 } }]).exec((error, data) => {
+        if (data) next()
+      })
+    })
     it('get the associated belongsTo through aggregation with association population', async () => {
       const results = await Rider.associate('bike').aggregate().populateAssociation('helmet')
       assert.strictEqual(results.length, riders.length)

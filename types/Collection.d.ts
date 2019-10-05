@@ -16,7 +16,6 @@ export declare class Collection<T> extends Array<T> {
     addNestedDocument(options?: any, ...foreignObjects: any[]): Promise<any[]>;
     removeNestedDocument(options: any, ...foreignObjects: any[]): Promise<void>;
     readonly isSynchronized: boolean;
-    synchronize(): Promise<void>;
     create(attributes: any, options: any): Promise<any>;
     createMany(attributes: any[], options: any): Promise<T[]>;
 }

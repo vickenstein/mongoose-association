@@ -315,8 +315,8 @@ const patchAggregatePrototype = (Aggregate: any) => {
     return new Promise((resolve, reject) => {
       _exec.call(this, (error: any, documents: any) => {
 
-        if (error) return reject(error)
-        if (!documents) return resolve(documents)
+        if (error) return reject(callback ? callback(error) : error)
+        if (!documents) return resolve(callback ? callback(null, documents) : documents)
         if (invertAssociation) {
           documents = documents.map((document: any) => {
             const nestedDcoument = document[invertAssociation.to]
@@ -331,11 +331,11 @@ const patchAggregatePrototype = (Aggregate: any) => {
           return Populator.populateAggregate(this._model, documents, populateAssociation)
             .then(() => {
               if (singular) [documents] = documents
-              return resolve(documents)
+              return resolve(callback ? callback(null, documents) : documents)
             })
         }
         if (singular) [documents] = documents
-        return resolve(documents)
+        return resolve(callback ? callback(null, documents) : documents)
       })
     })
   }

@@ -76,17 +76,12 @@ class Collection extends Array {
     }
     removeNestedDocument(options, ...foreignObjects) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.document[this.association.localField].splice();
+            // todo: need to add this functionality
         });
     }
     get isSynchronized() {
         return !this.document[this.association.localField].some((id, index) => {
-            console.log(this[index] && this[index].id, id);
             return (this[index] && this[index].id) !== id.toString();
-        });
-    }
-    synchronize() {
-        return __awaiter(this, void 0, void 0, function* () {
         });
     }
     create(attributes = {}, options) {
