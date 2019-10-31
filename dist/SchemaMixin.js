@@ -11,6 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const mongoose = require("mongoose");
 const Association_1 = require("./associations/Association");
+const Scope_1 = require("./associations/Scope");
 const Associations_1 = require("./Associations");
 const Collection_1 = require("./Collection");
 const { ObjectId } = mongoose.Schema.Types;
@@ -219,6 +220,34 @@ class SchemaMixin extends mongoose.Schema {
                 document: this,
             }));
         });
+        this.methods[$unset] = function unset() {
+            delete this[_as];
+            return this;
+        };
+    }
+    scope(name, association, match = {}) {
+        if (!this.associations)
+            this.associations = new Associations_1.Associations(this);
+        const scope = new Scope_1.Scope(name, association, match);
+        this.associations.indexScope(scope);
+        this.defineScopeVirtual(scope);
+        return scope;
+    }
+    defineScopeVirtual(scope) {
+        const { as, _as, $fetch, $unset, association } = scope;
+        this.virtual(as).get(function get() {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (!Object.prototype.hasOwnProperty.call(this, _as))
+                    this[_as] = yield this[$fetch]();
+                return this[_as];
+            });
+        });
+        this.methods[$fetch] = function fetch() {
+            return scope.findFor(this).collectAssociation({
+                document: this,
+                association
+            });
+        };
         this.methods[$unset] = function unset() {
             delete this[_as];
             return this;

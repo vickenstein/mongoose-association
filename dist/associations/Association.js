@@ -118,10 +118,10 @@ class Association {
     get $foreignField() {
         return this.define('$foreignField', Association.variablize(this.foreignField));
     }
-    findFor(document) {
+    findFor(document, options) {
         return;
     }
-    findForMany(documents) {
+    findForMany(documents, options) {
         return;
     }
     generateAggregateOnModel(options) {
@@ -168,11 +168,11 @@ class Association {
             from: this.foreignCollectionName,
             let: { localField: this.$localField },
             pipeline: [{ $match }],
-            as: this.as,
+            as: options.scopeAs || this.as,
         });
         if (options.hydrate !== false) {
             const hydrateOptions = { model: this.model };
-            hydrateOptions[this.as] = { model: this.foreignModel };
+            hydrateOptions[options.scopeAs || this.as] = { model: this.foreignModel };
             aggregate.hydrateAssociation(hydrateOptions);
         }
     }

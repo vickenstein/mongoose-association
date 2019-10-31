@@ -56,7 +56,7 @@ class Populator {
             const { localField } = association;
             let { foreignField } = association;
             if (association.through) {
-                foreignField = (document) => document[association.throughAsAssociation._with][foreignField];
+                foreignField = (document) => document[association.throughAsAssociation._with][association.foreignField];
             }
             const indexedResults = enumerateMethod(results, foreignField);
             documents.forEach((document) => {

@@ -27,6 +27,7 @@ export interface IAggregateOptions {
   $match?: object,
   hydrate?: boolean,
   as?: string,
+  scopeAs?: string,
   preserveNullAndEmptyArrays?: boolean
 }
 
@@ -195,11 +196,11 @@ export class Association {
     return this.define('$foreignField', Association.variablize(this.foreignField))
   }
 
-  findFor(document: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any> {
+  findFor(document: any, options?: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any> {
     return
   }
 
-  findForMany(documents: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any> {
+  findForMany(documents: any, options?: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any> {
     return
   }
 
@@ -251,12 +252,12 @@ export class Association {
       from: this.foreignCollectionName,
       let: { localField: this.$localField },
       pipeline: [{ $match }],
-      as: this.as,
+      as: options.scopeAs || this.as,
     })
 
     if (options.hydrate !== false) {
       const hydrateOptions: any = { model: this.model }
-      hydrateOptions[this.as] = { model: this.foreignModel }
+      hydrateOptions[options.scopeAs || this.as] = { model: this.foreignModel }
       aggregate.hydrateAssociation(hydrateOptions)
     }
   }

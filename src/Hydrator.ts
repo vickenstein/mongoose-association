@@ -9,7 +9,6 @@ export interface IHydrateOptions {
 export class Hydrator {
   static hydrate(documents: any[], hydrateOptions: IHydrateOptions) {
     const { model } = hydrateOptions
-
     const nestedFields: string[] = []
     Object.keys(hydrateOptions).forEach((field) => {
       if (field !== 'model' && field !== 'reset') nestedFields.push(field)

@@ -1,6 +1,7 @@
 import * as _ from 'lodash'
 import * as mongoose from 'mongoose'
 import { Association, IOptions } from './associations/Association'
+import { Scope } from './associations/Scope'
 import { Associations } from './Associations'
 import { Collection } from './Collection'
 
@@ -227,6 +228,35 @@ export class SchemaMixin extends mongoose.Schema {
         document: this,
       }))
     })
+
+    this.methods[$unset] = function unset() {
+      delete this[_as]
+      return this
+    }
+  }
+
+  scope(name: string, association: Association, match: any = {}) {
+    if (!this.associations) this.associations = new Associations(this)
+    const scope = new Scope(name, association, match)
+    this.associations.indexScope(scope)
+    this.defineScopeVirtual(scope)
+    return scope
+  }
+
+  defineScopeVirtual(scope: Scope) {
+    const { as, _as, $fetch, $unset, association } = scope
+
+    this.virtual(as).get(async function get() {
+      if (!Object.prototype.hasOwnProperty.call(this, _as)) this[_as] = await this[$fetch]()
+      return this[_as]
+    })
+
+    this.methods[$fetch] = function fetch() {
+      return scope.findFor(this).collectAssociation({
+        document: this,
+        association
+      })
+    }
 
     this.methods[$unset] = function unset() {
       delete this[_as]

@@ -81,7 +81,9 @@ export class Collection<T> extends Array<T> {
   }
 
   get isSynchronized() {
+    // @ts-ignore
     return !this.document[this.association.localField].some((id, index) => {
+      // @ts-ignore
       return (this[index] && this[index].id) !== id.toString()
     })
   }

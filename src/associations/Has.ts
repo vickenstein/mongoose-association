@@ -126,10 +126,10 @@ export class Has extends Association {
     return this.define('foreignField', this.withAssociation.localField)
   }
 
-  findFor(document: any) {
+  findFor(document: any, options: any = {}) {
     if (document instanceof Array) {
       if (!document.length) return (new mongoose.Query()).noop()
-      return this.findManyFor(document)
+      return this.findManyFor(document, options)
     }
 
     if (this.through) {
@@ -146,10 +146,17 @@ export class Has extends Association {
       const hydrateOptions: any = { model: this.foreignModel, reset: true }
       hydrateOptions[this.throughAsAssociation.with] = { model: this.throughModel }
 
-      const aggregate = this.throughAsAssociation.aggregate({
+      const aggregateOptions: IAggregateOptions = {
         $match,
-        as: this.foreignModelName,
-      }).invertAssociation(this.throughAsAssociation.with, this.throughAs)
+        as: this.foreignModelName
+      }
+
+      if (typeof options.preserveNullAndEmptyArrays === 'boolean') {
+        aggregateOptions.preserveNullAndEmptyArrays = options.preserveNullAndEmptyArrays
+      }
+
+      const aggregate = this.throughAsAssociation.aggregate(aggregateOptions)
+        .invertAssociation(this.throughAsAssociation.with, this.throughAs)
         .hydrateAssociation(hydrateOptions)
       if (this.associationType === 'hasOne') aggregate.singular()
       return aggregate
@@ -175,7 +182,8 @@ export class Has extends Association {
     })
   }
 
-  findManyFor(documents: any[]) {
+  findManyFor(documents: any[], options: any = {}) {
+
     if (this.through) {
       const $match: any = {}
       if (this.withAssociation.isReference) {
@@ -192,10 +200,17 @@ export class Has extends Association {
       const hydrateOptions: any = { model: this.foreignModel, reset: true }
       hydrateOptions[this.throughAsAssociation.with] = { model: this.throughModel }
 
-      return this.throughAsAssociation.aggregate({
+      const aggregateOptions: IAggregateOptions = {
         $match,
         as: this.foreignModelName,
-      }).invertAssociation(this.throughAsAssociation.with, this.throughAs)
+      }
+
+      if (typeof options.preserveNullAndEmptyArrays === 'boolean') {
+        aggregateOptions.preserveNullAndEmptyArrays = options.preserveNullAndEmptyArrays
+      }
+
+      return this.throughAsAssociation.aggregate(aggregateOptions)
+        .invertAssociation(this.throughAsAssociation.with, this.throughAs)
         .hydrateAssociation(hydrateOptions)
     }
     const { modelName, associationType, localField } = this.withAssociation
@@ -270,13 +285,13 @@ export class Has extends Association {
       })
       if (this.associationType === 'hasMany') {
         const $group: any = { _id: '$_id' }
-        $group[this.as] = { $push: this._throughAs }
+        $group[options.scopeAs || this.as] = { $push: this._throughAs }
         $group[this.throughWith] = { $push: this.throughWithAsAssociation._as }
         aggregate.group($group)
       }
       if (options.hydrate !== false) {
         const hydrateOptions: any = { model: this.model }
-        hydrateOptions[this.as] = { model: this.foreignModel }
+        hydrateOptions[options.scopeAs || this.as] = { model: this.foreignModel }
         hydrateOptions[this.throughWithAsAssociation.as] = { model: this.throughModel }
         aggregate.hydrateAssociation(hydrateOptions)
       }

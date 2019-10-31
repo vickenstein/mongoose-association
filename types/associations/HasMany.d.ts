@@ -8,8 +8,8 @@ export declare class HasMany extends Has {
     readonly throughWith: any;
     readonly localField: any;
     readonly foreignField: any;
-    findFor(document: any): any;
-    findManyFor(documents: any[]): any;
+    findFor(document: any, options?: any): any;
+    findManyFor(documents: any[], options?: any): any;
     findNestedFor(document: any): mongoose.DocumentQuery<any, any>;
     findManyNestedFor(documents: any[]): mongoose.DocumentQuery<any, any>;
 }

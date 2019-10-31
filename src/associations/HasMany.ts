@@ -54,18 +54,18 @@ export class HasMany extends Has {
     }
   }
 
-  findFor(document: any) {
+  findFor(document: any, options: any = {}) {
     if (this.nested) {
       return this.findNestedFor(document)
     }
-    return super.findFor(document)
+    return super.findFor(document, options)
   }
 
-  findManyFor(documents: any[]) {
+  findManyFor(documents: any[], options: any = {}) {
     if (this.nested) {
       return this.findManyNestedFor(documents)
     }
-    return super.findManyFor(documents)
+    return super.findManyFor(documents, options)
   }
 
   findNestedFor(document: any) {

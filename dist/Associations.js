@@ -42,6 +42,10 @@ class Associations {
         const { as } = association;
         return (this.asIndexed[as] = association);
     }
+    indexScope(scope) {
+        const { as } = scope;
+        return (this.asIndexed[as] = scope);
+    }
     forEach(func) {
         Object.keys(this.asIndexed).forEach(as => func(this.associate(as)));
     }

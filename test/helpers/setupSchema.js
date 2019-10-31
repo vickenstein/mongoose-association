@@ -113,10 +113,11 @@ carSchema.hasMany('Assembly', {
   with: 'vehicle',
   dependent: 'nullify'
 })
-carSchema.hasMany('Part', {
+const hasManyPart = carSchema.hasMany('Part', {
   through: 'Assembly',
   with: 'vehicle'
 })
+carSchema.scope('Red', hasManyPart, { color: 'red' })
 
 bikeSchema.hasMany('Assembly', {
   with: 'vehicle',
@@ -154,10 +155,20 @@ alienSchema.hasOne('Car', {
   as: 'ratedCar'
 })
 
-const licenseSchema = new Schema()
-bikeSchema.hasMany('License', {
+const licenseSchema = new Schema({
+  valid: Boolean
+})
+const hasManyLicense = bikeSchema.hasMany('License', {
   nested: true
 })
+bikeSchema.scope('invalid', hasManyLicense, { valid: false })
+
+const problemSchema = new Schema({
+  solved: Boolean
+})
+problemSchema.belongsTo('Car')
+const hasManyProblem = carSchema.hasMany('Problem')
+carSchema.scope('solved', hasManyProblem, { solved: true })
 
 const Rider = mongoose.model('Rider', riderSchema)
 const Bike = mongoose.model('Bike', bikeSchema)
@@ -169,4 +180,5 @@ const Assembly = mongoose.model('Assembly', assemblySchema)
 const Part = mongoose.model('Part', partSchema)
 const Rating = mongoose.model('Rating', ratingSchema)
 const License = mongoose.model('License', licenseSchema)
+const Problem = mongoose.model('Problem', problemSchema)
 module.exports = () => {}

@@ -39,17 +39,17 @@ class HasMany extends Has_1.Has {
             return this.define('foreignField', this.withAssociation.localField);
         }
     }
-    findFor(document) {
+    findFor(document, options = {}) {
         if (this.nested) {
             return this.findNestedFor(document);
         }
-        return super.findFor(document);
+        return super.findFor(document, options);
     }
-    findManyFor(documents) {
+    findManyFor(documents, options = {}) {
         if (this.nested) {
             return this.findManyNestedFor(documents);
         }
-        return super.findManyFor(documents);
+        return super.findManyFor(documents, options);
     }
     findNestedFor(document) {
         if (document instanceof Array) {

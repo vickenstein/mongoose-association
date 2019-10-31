@@ -2,6 +2,7 @@ import * as _ from 'lodash'
 import * as mongoose from 'mongoose'
 import { SchemaMixin } from './SchemaMixin'
 import { Association } from './associations/Association'
+import { Scope } from './associations/Scope'
 import * as associations from './associations/index'
 
 interface IASSOCIATIONS {
@@ -9,7 +10,7 @@ interface IASSOCIATIONS {
 }
 
 interface IasIndex {
-  [as: string]: Association
+  [as: string]: Association | Scope
 }
 
 const ASSOCIATIONS: IASSOCIATIONS = {
@@ -65,7 +66,12 @@ export class Associations {
     return (this.asIndexed[as] = association)
   }
 
-  forEach(func: (association: Association) => void) {
+  indexScope(scope: Scope) {
+    const { as } = scope
+    return (this.asIndexed[as] = scope)
+  }
+
+  forEach(func: (association: Association | Scope) => void) {
     Object.keys(this.asIndexed).forEach(as => func(this.associate(as)))
   }
 }

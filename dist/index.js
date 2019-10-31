@@ -239,7 +239,7 @@ const patchAggregatePrototype = (Aggregate) => {
         return new Promise((resolve, reject) => {
             _exec.call(this, (error, documents) => {
                 if (error)
-                    return reject(callback ? callback(error) : error);
+                    return reject(callback ? callback(error, documents) : error);
                 if (!documents)
                     return resolve(callback ? callback(null, documents) : documents);
                 if (invertAssociation) {
