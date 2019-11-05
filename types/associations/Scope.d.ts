@@ -22,6 +22,7 @@ export declare class Scope {
     readonly throughAsAssociation: any;
     readonly associationType: any;
     readonly nested: any;
+    readonly foreignModelName: any;
     findFor(document: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any>;
     aggregateTo(aggregate: mongoose.Aggregate<any>): mongoose.Aggregate<any>;
 }

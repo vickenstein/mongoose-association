@@ -59,6 +59,9 @@ class Scope {
     get nested() {
         return this.define('nested', this.association.nested);
     }
+    get foreignModelName() {
+        return this.define('foreignModelName', this.association.foreignModelName);
+    }
     findFor(document) {
         const query = this.association.findFor(document, {
             preserveNullAndEmptyArrays: false

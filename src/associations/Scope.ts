@@ -85,6 +85,10 @@ export class Scope {
     return this.define('nested', this.association.nested)
   }
 
+  get foreignModelName() {
+    return this.define('foreignModelName', this.association.foreignModelName)
+  }
+
   findFor(document: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any> {
     const query = this.association.findFor(document, {
       preserveNullAndEmptyArrays: false
