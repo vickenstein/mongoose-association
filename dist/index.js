@@ -244,10 +244,10 @@ const patchAggregatePrototype = (Aggregate) => {
                     return resolve(callback ? callback(null, documents) : documents);
                 if (invertAssociation) {
                     documents = documents.map((document) => {
-                        const nestedDcoument = document[invertAssociation.to];
+                        const nestedDocument = document[invertAssociation.to];
                         delete document[invertAssociation.to];
-                        nestedDcoument[invertAssociation.from] = document;
-                        return nestedDcoument;
+                        nestedDocument[invertAssociation.from] = document;
+                        return nestedDocument;
                     });
                 }
                 if (hydrateAssociation)
