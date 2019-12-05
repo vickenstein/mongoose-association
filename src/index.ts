@@ -317,24 +317,28 @@ const patchAggregatePrototype = (Aggregate: any) => {
 
         if (error) return reject(callback ? callback(error, documents) : error)
         if (!documents) return resolve(callback ? callback(null, documents) : documents)
-        if (invertAssociation) {
-          documents = documents.map((document: any) => {
-            const nestedDcoument = document[invertAssociation.to]
-            delete document[invertAssociation.to]
-            nestedDcoument[invertAssociation.from] = document
-            return nestedDcoument
-          })
-        }
-        if (hydrateAssociation) documents = Hydrator.hydrate(documents, hydrateAssociation)
-        if (collectAssociation) documents = Collection.collect(documents, collectAssociation)
-        if (populateAssociation) {
-          return Populator.populateAggregate(this._model, documents, populateAssociation)
-            .then(() => {
-              if (singular) [documents] = documents
-              return resolve(callback ? callback(null, documents) : documents)
+        try {
+          if (invertAssociation) {
+            documents = documents.map((document: any) => {
+              const nestedDocument = document[invertAssociation.to]
+              delete document[invertAssociation.to]
+              nestedDocument[invertAssociation.from] = document
+              return nestedDocument
             })
+          }
+          if (hydrateAssociation) documents = Hydrator.hydrate(documents, hydrateAssociation)
+          if (collectAssociation) documents = Collection.collect(documents, collectAssociation)
+          if (populateAssociation) {
+            return Populator.populateAggregate(this._model, documents, populateAssociation)
+              .then(() => {
+                if (singular) [documents] = documents
+                return resolve(callback ? callback(null, documents) : documents)
+              })
+          }
+          if (singular) [documents] = documents
+        } catch (error) {
+          return reject(callback ? callback(error, documents) : error)
         }
-        if (singular) [documents] = documents
         return resolve(callback ? callback(null, documents) : documents)
       })
     })

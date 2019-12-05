@@ -242,28 +242,33 @@ const patchAggregatePrototype = (Aggregate) => {
                     return reject(callback ? callback(error, documents) : error);
                 if (!documents)
                     return resolve(callback ? callback(null, documents) : documents);
-                if (invertAssociation) {
-                    documents = documents.map((document) => {
-                        const nestedDcoument = document[invertAssociation.to];
-                        delete document[invertAssociation.to];
-                        nestedDcoument[invertAssociation.from] = document;
-                        return nestedDcoument;
-                    });
+                try {
+                    if (invertAssociation) {
+                        documents = documents.map((document) => {
+                            const nestedDocument = document[invertAssociation.to];
+                            delete document[invertAssociation.to];
+                            nestedDocument[invertAssociation.from] = document;
+                            return nestedDocument;
+                        });
+                    }
+                    if (hydrateAssociation)
+                        documents = Hydrator_1.Hydrator.hydrate(documents, hydrateAssociation);
+                    if (collectAssociation)
+                        documents = Collection_1.Collection.collect(documents, collectAssociation);
+                    if (populateAssociation) {
+                        return Populator_1.Populator.populateAggregate(this._model, documents, populateAssociation)
+                            .then(() => {
+                            if (singular)
+                                [documents] = documents;
+                            return resolve(callback ? callback(null, documents) : documents);
+                        });
+                    }
+                    if (singular)
+                        [documents] = documents;
                 }
-                if (hydrateAssociation)
-                    documents = Hydrator_1.Hydrator.hydrate(documents, hydrateAssociation);
-                if (collectAssociation)
-                    documents = Collection_1.Collection.collect(documents, collectAssociation);
-                if (populateAssociation) {
-                    return Populator_1.Populator.populateAggregate(this._model, documents, populateAssociation)
-                        .then(() => {
-                        if (singular)
-                            [documents] = documents;
-                        return resolve(callback ? callback(null, documents) : documents);
-                    });
+                catch (error) {
+                    return reject(callback ? callback(error, documents) : error);
                 }
-                if (singular)
-                    [documents] = documents;
                 return resolve(callback ? callback(null, documents) : documents);
             });
         });
