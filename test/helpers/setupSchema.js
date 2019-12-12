@@ -161,6 +161,11 @@ const licenseSchema = new Schema({
 const hasManyLicense = bikeSchema.hasMany('License', {
   nested: true
 })
+
+licenseSchema.hasMany('Bike', {
+  with: 'licenses'
+})
+
 bikeSchema.scope('invalid', hasManyLicense, { valid: false })
 
 const problemSchema = new Schema({

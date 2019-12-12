@@ -74,6 +74,11 @@ describe("Some shared functionality of the has reference", () => {
   })
 
   describe('#findFor()', () => {
+    it('get the associated hasMany via inverse nested', async () => {
+      const license = licenses[0]
+      const bikes = await license.bikes
+      assert.strictEqual(bikes.length, 2)
+    })
     it('get the associated belongsTo objects', async () => {
       const part = await Part.findOne({ _id: parts[0]._id })
       const assemblies = await part.assemblies
