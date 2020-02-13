@@ -66,15 +66,7 @@ class Scope {
         const query = this.association.findFor(document, {
             preserveNullAndEmptyArrays: false
         });
-        if (this.association.through) {
-            query.where({
-                [this.association.throughAsAssociation.as]: this.match
-            });
-        }
-        else {
-            query.where(this.match);
-        }
-        return query;
+        return query.where(this.match);
     }
     aggregateTo(aggregate) {
         const query = this.association.aggregateTo(aggregate, {
@@ -82,9 +74,7 @@ class Scope {
             scopeAs: this.as
         });
         if (this.association.through) {
-            query.where({
-                [this.association.throughAsAssociation.as]: this.match
-            });
+            query.where(this.match);
         }
         else {
             query.where({

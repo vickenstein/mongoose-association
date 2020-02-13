@@ -117,7 +117,7 @@ const hasManyPart = carSchema.hasMany('Part', {
   through: 'Assembly',
   with: 'vehicle'
 })
-carSchema.scope('Red', hasManyPart, { color: 'red' })
+carSchema.scope('Red', hasManyPart, { part: { color: 'red' }})
 
 bikeSchema.hasMany('Assembly', {
   with: 'vehicle',

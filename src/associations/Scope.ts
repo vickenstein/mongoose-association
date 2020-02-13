@@ -94,15 +94,7 @@ export class Scope {
       preserveNullAndEmptyArrays: false
     })
 
-    if (this.association.through) {
-      query.where({
-        [this.association.throughAsAssociation.as]: this.match
-      })
-    } else {
-      query.where(this.match)
-    }
-
-    return query
+    return query.where(this.match)
   }
 
   aggregateTo(aggregate: mongoose.Aggregate<any>) {
@@ -112,9 +104,7 @@ export class Scope {
     })
 
     if (this.association.through) {
-      query.where({
-        [this.association.throughAsAssociation.as]: this.match
-      })
+      query.where(this.match)
     } else {
       query.where({
         [this.as]: this.match
