@@ -6,5 +6,6 @@ export declare class Fields {
     readonly length: number;
     readonly root: string[];
     children(matchField: string): Fields;
+    filter(filterFields: string[]): string[];
 }
 //# sourceMappingURL=Fields.d.ts.map

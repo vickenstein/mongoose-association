@@ -47,4 +47,19 @@ export class Fields {
     })
     return fields
   }
+
+  filter(filterFields: string[]) {
+    const fields: string[] = []
+    filterFields.forEach(field => {
+      const children = this.children(field)
+      if (children.length) {
+        children.fields.forEach(childField => {
+          fields.push(`${field}.${childField}`)
+        })
+      } else {
+        fields.push(field)
+      }
+    })
+    return fields
+  }
 }

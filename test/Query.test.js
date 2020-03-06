@@ -228,5 +228,10 @@ describe("mongose standard queries, find, findOne with population", () => {
       const riders = _.compact(vehicles.map(vehicle => vehicle._rider))
       assert.strictEqual(riders.length, BIKECOUNT * 2)
     })
+    it('able to populate a polymorphic association with aggregate', async () => {
+      const parts = await Part.find({})
+      await Part.populateAssociation(parts, 'assemblies.vehicle.rider')
+      assert.isOk(parts[0]._assemblies[0]._vehicle._rider)
+    })
   })
 })

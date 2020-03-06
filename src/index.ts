@@ -152,6 +152,7 @@ const patchQueryPrototype = (Query: any) => {
     return new Promise((resolve, reject) => {
       if (populateAssociation && populateAssociation.root.length) {
         const aggregate = Populator.aggregateFromQuery(this, populateAssociation)
+        //@ts-ignore need to fix upstream return types
         aggregate.then((documents: any) => resolve(documents))
           .catch((error: any) => reject(error))
       } else {
@@ -188,6 +189,7 @@ const patchQueryPrototype = (Query: any) => {
     const fields = Populator.checkFields(this._populateAssociation)
 
     if (fields.root.length && _.includes(POPULATABLE_QUERY, this.op)) {
+      //@ts-ignore need to fix upstream return types
       return Populator.aggregateFromQuery(this, fields)._explain()
     }
 

@@ -43,5 +43,20 @@ class Fields {
         });
         return fields;
     }
+    filter(filterFields) {
+        const fields = [];
+        filterFields.forEach(field => {
+            const children = this.children(field);
+            if (children.length) {
+                children.fields.forEach(childField => {
+                    fields.push(`${field}.${childField}`);
+                });
+            }
+            else {
+                fields.push(field);
+            }
+        });
+        return fields;
+    }
 }
 exports.Fields = Fields;

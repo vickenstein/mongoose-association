@@ -162,19 +162,38 @@ class Populator {
             .match(this.queryConditionToAggregateMatch(query._conditions));
         if (query.op === 'findOne')
             aggregate.limit(1).singular();
+        const polymorphicFields = [];
         fields.root.forEach((field) => {
             const association = query.model.associate(field);
             if (association) {
-                association.aggregateTo(aggregate);
-                const children = fields.children(field);
-                if (children.length) {
-                    const options = {};
-                    options[field] = children;
-                    aggregate.populateAssociation(options);
+                if (association.associationType === 'polymorphic') {
+                    polymorphicFields.push(field);
+                }
+                else {
+                    association.aggregateTo(aggregate);
+                    const children = fields.children(field);
+                    if (children.length) {
+                        const options = {};
+                        options[field] = children;
+                        aggregate.populateAssociation(options);
+                    }
                 }
             }
         });
         aggregate.hydrateAssociation({ model: query.model });
+        if (polymorphicFields.length) {
+            return aggregate.then(documents => {
+                if (documents.length) {
+                    return this.populate(documents[0].constructor, documents, ...fields.filter(polymorphicFields));
+                }
+                else {
+                    return documents;
+                }
+            });
+        }
+        else {
+            return aggregate;
+        }
         return aggregate;
     }
 }
