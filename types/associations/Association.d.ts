@@ -76,8 +76,8 @@ export declare class Association {
     readonly $with: any;
     readonly $localField: any;
     readonly $foreignField: any;
-    findFor(document: any, options?: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any>;
-    findForMany(documents: any, options?: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any>;
+    findFor(document: any, options?: any): any;
+    findForMany(documents: any, options?: any): any;
     generateAggregateOnModel(options?: IAggregateOptions): any;
     aggregateMatch(options: IAggregateOptions): any;
     aggregate(options?: IAggregateOptions): mongoose.Aggregate<any>;

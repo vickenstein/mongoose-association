@@ -5,8 +5,8 @@ export declare class Polymorphic extends Association {
     constructor(options: IOptions, schema: mongoose.Schema);
     readonly associationType: any;
     readonly typeField: any;
-    findFor(document: any): mongoose.DocumentQuery<any, any>;
-    findManyFor(documents: any[]): mongoose.DocumentQuery<any, any>;
+    findFor(document: any): mongoose.DocumentQuery<any, any> | mongoose.DocumentQuery<any, any>[];
+    findManyFor(documents: any[]): mongoose.DocumentQuery<any, any>[];
     aggregateMatch(options: IAggregateOptions): any;
     aggregateLookUp(aggregate: mongoose.Aggregate<any>, options: IAggregateOptions): void;
     aggregate(options?: IAggregateOptions): mongoose.Aggregate<any>;

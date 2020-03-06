@@ -48,17 +48,24 @@ export class Populator {
   static async populateField(model: mongoose.Model<any>, documents: any, field: string, childrenFields: Fields) {
     const _field = Association.cacheKey(field)
     const association = model.associate(field)
-    const results = await association.findFor(documents).populateAssociation(childrenFields)
+    if (!association) return documents
+    const results = association.associationType === 'polymorphic' ?
+      _.flatten(await Promise.all(association.findFor(documents).map((query: any) => query.populateAssociation(childrenFields)))) :
+      await association.findFor(documents).populateAssociation(childrenFields)
     const enumerateMethod = association.associationType === 'hasMany' && !association.nested ? _.groupBy : _.keyBy
     const { localField } = association
     let { foreignField } = association
     if (association.through) {
       foreignField = (document: any) => document[association.throughAsAssociation._with][association.foreignField]
+    } else if (association.associationType === 'polymorphic') {
+      foreignField = (document: any) => `${document[association.foreignField]}${document.constructor.modelName}`
     }
     const indexedResults = enumerateMethod(results, foreignField)
     documents.forEach((document: any) => {
       if (association.nested) {
         document[_field] = document[localField].map((id: string) => indexedResults[id])
+      } else if (association.associationType === 'polymorphic') {
+        document[_field] = indexedResults[`${document[localField]}${document[association.typeField]}`]
       } else {
         document[_field] = indexedResults[document[localField]]
       }
@@ -158,12 +165,14 @@ export class Populator {
     if (query.op === 'findOne') aggregate.limit(1).singular()
     fields.root.forEach((field: string) => {
       const association = query.model.associate(field)
-      association.aggregateTo(aggregate)
-      const children = fields.children(field)
-      if (children.length) {
-        const options: any = {}
-        options[field] = children
-        aggregate.populateAssociation(options)
+      if (association) {
+        association.aggregateTo(aggregate)
+        const children = fields.children(field)
+        if (children.length) {
+          const options: any = {}
+          options[field] = children
+          aggregate.populateAssociation(options)
+        }
       }
     })
     aggregate.hydrateAssociation({ model: query.model })

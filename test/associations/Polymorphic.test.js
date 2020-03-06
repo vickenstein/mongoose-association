@@ -1,4 +1,5 @@
 require('../specHelper')
+const _ = require('lodash')
 const { assert } = require('chai')
 const mongoose = require('mongoose')
 const { Polymorphic } = require('../../dist/associations/Polymorphic')
@@ -107,7 +108,7 @@ describe("Create an polymorphic association", () => {
   describe("#findManyFor()", () => {
     it('get the associated object', async () => {
       const polymorphic = Rating.associate('vehicle')
-      const ratedBikes = await polymorphic.findManyFor(ratings)
+      const ratedBikes = _.flatten(await Promise.all(polymorphic.findManyFor(ratings)))
       assert.isOk(ratedBikes)
       assert.strictEqual(ratedBikes.length, BIKECOUNT)
     })

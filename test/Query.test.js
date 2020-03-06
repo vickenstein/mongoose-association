@@ -3,6 +3,7 @@ const { assert } = require('chai')
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Types.ObjectId
 const drop = require('./helpers/drop')
+const _ = require('lodash')
 
 const Rider = mongoose.model('Rider')
 const Helmet = mongoose.model('Helmet')
@@ -205,6 +206,27 @@ describe("mongose standard queries, find, findOne with population", () => {
       const helmet = await results[0].helmet
       const bike = await results[0].bike
       assert.strictEqual(mongooseRequestCount, mongoose.requestCount)
+    })
+  })
+
+  describe('#populate', () => {
+    it('able to populate a polymorphic association', async () => {
+      const assemblies = await Assembly.find({})
+      await Assembly.populateAssociation(assemblies, 'vehicle')
+      const vehicles = await Promise.all(assemblies.map(assembly => assembly.vehicle))
+      const bikeCount = vehicles.filter(vehicle => vehicle.constructor.modelName == 'Bike').length
+      const carCount = vehicles.filter(vehicle => vehicle.constructor.modelName == 'Car').length
+      assert.strictEqual(bikeCount, BIKECOUNT * 2)
+      assert.strictEqual(carCount, BIKECOUNT * 2)
+    })
+    it('able to populate a polymorphic association with nested association', async () => {
+      const assemblies = await Assembly.find({})
+      await Assembly.populateAssociation(assemblies, 'vehicle.rider')
+      const vehicles = await Promise.all(assemblies.map(assembly => assembly.vehicle))
+      const bikeCount = vehicles.filter(vehicle => vehicle.constructor.modelName == 'Bike').length
+      const carCount = vehicles.filter(vehicle => vehicle.constructor.modelName == 'Car').length
+      const riders = _.compact(vehicles.map(vehicle => vehicle._rider))
+      assert.strictEqual(riders.length, BIKECOUNT * 2)
     })
   })
 })

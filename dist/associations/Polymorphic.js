@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const _ = require("lodash");
 const mongoose = require("mongoose");
 const Association_1 = require("./Association");
 const OPTIONS = {
@@ -39,10 +40,13 @@ class Polymorphic extends Association_1.Association {
         });
     }
     findManyFor(documents) {
-        return Polymorphic.find({
-            modelName: documents[0][this.typeField],
-            localField: '_id',
-            localFieldValue: documents.map(document => document[this.localField]),
+        const groupedDocuments = _.groupBy(documents, document => document[this.typeField]);
+        return Object.keys(groupedDocuments).map(modelName => {
+            return Polymorphic.find({
+                modelName,
+                localField: '_id',
+                localFieldValue: groupedDocuments[modelName].map(document => document[this.localField])
+            });
         });
     }
     aggregateMatch(options) {

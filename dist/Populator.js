@@ -51,17 +51,27 @@ class Populator {
         return __awaiter(this, void 0, void 0, function* () {
             const _field = Association_1.Association.cacheKey(field);
             const association = model.associate(field);
-            const results = yield association.findFor(documents).populateAssociation(childrenFields);
+            if (!association)
+                return documents;
+            const results = association.associationType === 'polymorphic' ?
+                _.flatten(yield Promise.all(association.findFor(documents).map((query) => query.populateAssociation(childrenFields)))) :
+                yield association.findFor(documents).populateAssociation(childrenFields);
             const enumerateMethod = association.associationType === 'hasMany' && !association.nested ? _.groupBy : _.keyBy;
             const { localField } = association;
             let { foreignField } = association;
             if (association.through) {
                 foreignField = (document) => document[association.throughAsAssociation._with][association.foreignField];
             }
+            else if (association.associationType === 'polymorphic') {
+                foreignField = (document) => `${document[association.foreignField]}${document.constructor.modelName}`;
+            }
             const indexedResults = enumerateMethod(results, foreignField);
             documents.forEach((document) => {
                 if (association.nested) {
                     document[_field] = document[localField].map((id) => indexedResults[id]);
+                }
+                else if (association.associationType === 'polymorphic') {
+                    document[_field] = indexedResults[`${document[localField]}${document[association.typeField]}`];
                 }
                 else {
                     document[_field] = indexedResults[document[localField]];
@@ -154,12 +164,14 @@ class Populator {
             aggregate.limit(1).singular();
         fields.root.forEach((field) => {
             const association = query.model.associate(field);
-            association.aggregateTo(aggregate);
-            const children = fields.children(field);
-            if (children.length) {
-                const options = {};
-                options[field] = children;
-                aggregate.populateAssociation(options);
+            if (association) {
+                association.aggregateTo(aggregate);
+                const children = fields.children(field);
+                if (children.length) {
+                    const options = {};
+                    options[field] = children;
+                    aggregate.populateAssociation(options);
+                }
             }
         });
         aggregate.hydrateAssociation({ model: query.model });

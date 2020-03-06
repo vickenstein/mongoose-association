@@ -196,11 +196,11 @@ export class Association {
     return this.define('$foreignField', Association.variablize(this.foreignField))
   }
 
-  findFor(document: any, options?: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any> {
+  findFor(document: any, options?: any): any {
     return
   }
 
-  findForMany(documents: any, options?: any): mongoose.DocumentQuery<any, any> | mongoose.Aggregate<any> {
+  findForMany(documents: any, options?: any): any {
     return
   }
 

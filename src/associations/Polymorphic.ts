@@ -1,3 +1,4 @@
+import * as _ from 'lodash'
 import * as mongoose from 'mongoose'
 import { Association, IOptions, IAggregateOptions } from './Association'
 
@@ -42,10 +43,13 @@ export class Polymorphic extends Association {
   }
 
   findManyFor(documents: any[]) {
-    return Polymorphic.find({
-      modelName: documents[0][this.typeField],
-      localField: '_id',
-      localFieldValue: documents.map(document => document[this.localField]),
+    const groupedDocuments = _.groupBy(documents, document => document[this.typeField])
+    return Object.keys(groupedDocuments).map(modelName => {
+      return Polymorphic.find({
+        modelName,
+        localField: '_id',
+        localFieldValue: groupedDocuments[modelName].map(document => document[this.localField])
+      })
     })
   }
 
